@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_color"
+    android:padding="24dp"
+    tools:context=".SalesSanitizersActivity">
+
+    <TextView
+        android:id="@+id/sales_monitoring_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:gravity="center"
+        android:letterSpacing="0.2"
+        android:text="@string/sales_monitoring_title"
+        android:textColor="@color/black"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/button_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@id/sales_monitoring_title">
+
+        <Button
+            android:id="@+id/btn_sanitary_napkins"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="@color/peach_button"
+            android:text="@string/sanitary_napkins"
+            android:textAllCaps="false"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            app:cornerRadius="30dp" />
+
+        <Button
+            android:id="@+id/btn_wet_wipes"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="@color/peach_button"
+            android:text="@string/wet_wipes"
+            android:textAllCaps="false"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            app:cornerRadius="30dp" />
+
+        <Button
+            android:id="@+id/btn_facial_tissues"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="@color/peach_button"
+            android:text="@string/facial_tissues"
+            android:textAllCaps="false"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            app:cornerRadius="30dp" />
+
+        <Button
+            android:id="@+id/btn_hand_sanitizers_top"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:backgroundTint="@color/peach_button"
+            android:text="@string/hand_sanitizers"
+            android:textAllCaps="false"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            app:cornerRadius="30dp" />
+    </LinearLayout>
+
+    <TableLayout
+        android:id="@+id/sales_table"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:stretchColumns="*"
+        app:layout_constraintTop_toBottomOf="@id/button_group">
+
+        <!-- Table Header -->
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="2dp"
+                android:background="@color/table_header"
+                android:gravity="center"
+                android:padding="12dp"
+                android:text="Item(s) Sold"
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:textSize="12sp" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="2dp"
+                android:background="@color/table_header"
+                android:gravity="center"
+                android:padding="12dp"
+                android:text="Date"
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:textSize="12sp" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="2dp"
+                android:background="@color/table_header"
+                android:gravity="center"
+                android:padding="12dp"
+                android:text="Time"
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:textSize="12sp" />
+        </TableRow>
+
+        <!-- Table Rows (Placeholders) -->
+        <TableRow>
+            <TextView android:layout_margin="2dp" android:background="@color/table_row" android:padding="12dp" />
+            <TextView android:layout_margin="2dp" android:background="@color/table_row" android:padding="12dp" />
+            <TextView android:layout_margin="2dp" android:background="@color/table_row" android:padding="12dp" />
+        </TableRow>
+        <TableRow>
+            <TextView android:layout_margin="2dp" android:background="@color/table_row" android:padding="12dp" />
+            <TextView android:layout_margin="2dp" android:background="@color/table_row" android:padding="12dp" />
+            <TextView android:layout_margin="2dp" android:background="@color/table_row" android:padding="12dp" />
+        </TableRow>
+        <TableRow>
+            <TextView android:layout_margin="2dp" android:background="@color/table_row" android:padding="12dp" />
+            <TextView android:layout_margin="2dp" android:background="@color/table_row" android:padding="12dp" />
+            <TextView android:layout_margin="2dp" android:background="@color/table_row" android:padding="12dp" />
+        </TableRow>
+    </TableLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

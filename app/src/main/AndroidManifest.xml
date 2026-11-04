@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@drawable/sanivend_logo"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/sanivend_logo"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Sanivend">
+
+        <!-- Set DashboardActivity as the entry point -->
+        <activity
+            android:name=".DashboardActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".LoginActivity"
+            android:exported="true">
+            <!-- Removed LAUNCHER filter from here -->
+            <intent-filter android:label="filter_auth" android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="https"
+                      android:host="vending-machine-g7.firebaseapp.com" />
+
+                <data android:scheme="https"
+                      android:host="vending-machine-g7.web.app" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".MainActivity" android:exported="false" />
+        <activity android:name=".SignUpActivity" android:exported="false" />
+        <activity android:name=".CreateProfileActivity" android:exported="false" />
+        <activity android:name=".VerificationActivity" android:exported="false" />
+        <activity android:name=".SalesMonitoringActivity" android:exported="false" />
+        <activity android:name=".InventoryTrackingActivity" android:exported="false" />
+        <activity android:name=".ProductsActivity" android:exported="false" />
+        <activity android:name=".SalesNapkinsActivity" android:exported="false" />
+        <activity android:name=".SalesWipesActivity" android:exported="false" />
+        <activity android:name=".SalesTissuesActivity" android:exported="false" />
+        <activity android:name=".SalesSanitizersActivity" android:exported="false" />
+        <activity android:name=".ProductNapkinsActivity" android:exported="false" />
+        <activity android:name=".ProductWipesActivity" android:exported="false" />
+        <activity android:name=".ProductTissuesActivity" android:exported="false" />
+        <activity android:name=".ProductSanitizersActivity" android:exported="false" />
+        <activity android:name=".GraphActivity" android:exported="false" />
+    </application>
+
+</manifest>

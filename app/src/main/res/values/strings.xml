@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Sanivend</string>
+    <string name="app_logo_description">Sanivend Logo</string>
+    <string name="welcome_text">W  E  L  C  O  M  E  !</string>
+    <string name="username_hint">Username</string>
+    <string name="password_hint">Password</string>
+    <string name="login_button_text">Log in</string>
+    <string name="signup_text">Sign up</string>
+    <string name="hello_admin">Hello, admin123!</string>
+    <string name="assist_question">How may we assist you?</string>
+    <string name="sales_monitoring">Sales Monitoring</string>
+    <string name="inventory_tracking">Inventory Tracking</string>
+    <string name="inventory_tracking_title">INVENTORY\nTRACKING</string>
+    <string name="products">Products</string>
+    <string name="sales_monitoring_title">SALES\nMONITORING</string>
+    <string name="sanitary_napkins">Sanitary Napkins</string>
+    <string name="wet_wipes">Wet Wipes</string>
+    <string name="facial_tissues">Facial Tissues</string>
+    <string name="hand_sanitizers">Hand Sanitizers</string>
+</resources>

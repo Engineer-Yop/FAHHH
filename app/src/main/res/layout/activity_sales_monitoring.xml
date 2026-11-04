@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_color"
+    android:padding="24dp"
+    tools:context=".SalesMonitoringActivity">
+
+    <TextView
+        android:id="@+id/sales_monitoring_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="60dp"
+        android:gravity="center"
+        android:letterSpacing="0.2"
+        android:text="@string/sales_monitoring_title"
+        android:textColor="@color/black"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="32dp"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/sales_monitoring_title">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Category: Sanitary Napkins -->
+            <Button
+                android:id="@+id/btn_sales_napkins"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="8dp"
+                android:backgroundTint="@color/peach_button"
+                android:text="@string/sanitary_napkins"
+                android:textAllCaps="false"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                app:cornerRadius="30dp" />
+
+            <LinearLayout
+                android:id="@+id/containerNapkins"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <include layout="@layout/layout_sales_table_header" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvSanitaryNapkins"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    tools:listitem="@layout/item_sales_row" />
+            </LinearLayout>
+
+            <!-- Category: Wet Wipes -->
+            <Button
+                android:id="@+id/btn_sales_wipes"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="8dp"
+                android:backgroundTint="@color/peach_button"
+                android:text="@string/wet_wipes"
+                android:textAllCaps="false"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                app:cornerRadius="30dp" />
+
+            <LinearLayout
+                android:id="@+id/containerWipes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <include layout="@layout/layout_sales_table_header" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvWetWipes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    tools:listitem="@layout/item_sales_row" />
+            </LinearLayout>
+
+            <!-- Category: Facial Tissues -->
+            <Button
+                android:id="@+id/btn_sales_tissues"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="8dp"
+                android:backgroundTint="@color/peach_button"
+                android:text="@string/facial_tissues"
+                android:textAllCaps="false"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                app:cornerRadius="30dp" />
+
+            <LinearLayout
+                android:id="@+id/containerTissues"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <include layout="@layout/layout_sales_table_header" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvFacialTissues"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    tools:listitem="@layout/item_sales_row" />
+            </LinearLayout>
+
+            <!-- Category: Hand Sanitizers -->
+            <Button
+                android:id="@+id/btn_sales_sanitizers"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="8dp"
+                android:backgroundTint="@color/peach_button"
+                android:text="@string/hand_sanitizers"
+                android:textAllCaps="false"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                app:cornerRadius="30dp" />
+
+            <LinearLayout
+                android:id="@+id/containerSanitizers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <include layout="@layout/layout_sales_table_header" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvHandSanitizers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    tools:listitem="@layout/item_sales_row" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

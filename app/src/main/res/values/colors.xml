@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="background_color">#F7F2FF</color>
+    <color name="container_color">#D8D0FF</color>
+    <color name="input_field_color">#8599E9</color>
+    <color name="text_primary">#5E26D1</color>
+    <color name="hint_color">#6C7AC4</color>
+    <color name="mint_button">#BFFFF0</color>
+    <color name="peach_button">#FFE5DD</color>
+    <color name="table_header">#BA9EFA</color>
+    <color name="table_row">#E7DEFF</color>
+    <color name="inventory_category_bg">#A7D6D6</color>
+    <color name="inventory_item_bg">#DFCCFF</color>
+    <color name="inventory_count_bg">#F0E9FF</color>
+    <color name="product_category_bg">#819CEB</color>
+    <color name="light_grey_container">#E5E9EB</color>
+</resources>

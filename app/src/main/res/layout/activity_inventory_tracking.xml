@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_color"
+    android:paddingVertical="24dp"
+    tools:context=".InventoryTrackingActivity">
+
+    <TextView
+        android:id="@+id/inventory_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:gravity="center"
+        android:letterSpacing="0.2"
+        android:text="@string/inventory_tracking_title"
+        android:textColor="@color/black"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="32dp"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/inventory_title">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="24dp">
+
+            <!-- Header Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:orientation="horizontal"
+                android:weightSum="2">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:background="@color/inventory_item_bg"
+                    android:gravity="center"
+                    android:text="ITEM"
+                    android:textColor="@color/black"
+                    android:textStyle="bold"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:background="@color/inventory_item_bg"
+                    android:gravity="center"
+                    android:text="# OF ITEM(S)"
+                    android:textColor="@color/black"
+                    android:textStyle="bold"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Category: Sanitary Napkins -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginHorizontal="48dp"
+                android:background="@drawable/inventory_category_bg"
+                android:gravity="center"
+                android:text="Sanitary Napkins"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- Sisters Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginHorizontal="24dp"
+                android:orientation="horizontal"
+                android:weightSum="2">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:background="@color/inventory_item_bg"
+                    android:gravity="center"
+                    android:text="SISTERS"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/tv_count_tray_1"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:background="@color/inventory_count_bg"
+                    android:gravity="center"
+                    android:text="0"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"/>
+            </LinearLayout>
+
+            <!-- Charmee Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginHorizontal="24dp"
+                android:orientation="horizontal"
+                android:weightSum="2">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:background="@color/inventory_item_bg"
+                    android:gravity="center"
+                    android:text="CHARMEE"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/tv_count_tray_2"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:background="@color/inventory_count_bg"
+                    android:gravity="center"
+                    android:text="0"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"/>
+            </LinearLayout>
+
+            <!-- Category: Wet Wipes -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginHorizontal="48dp"
+                android:background="@drawable/inventory_category_bg"
+                android:gravity="center"
+                android:text="Wet Wipes"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginHorizontal="24dp"
+                android:orientation="horizontal"
+                android:weightSum="2">
+                <TextView android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:layout_marginEnd="8dp" android:background="@color/inventory_item_bg" android:gravity="center" android:text="KLEENFANT" android:textColor="@color/black" android:textSize="11sp" android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/tv_count_tray_3"
+                    android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:layout_marginStart="8dp" android:background="@color/inventory_count_bg" android:gravity="center" android:text="0" android:textColor="@color/black" android:textSize="11sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginHorizontal="24dp"
+                android:orientation="horizontal"
+                android:weightSum="2">
+                <TextView android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:layout_marginEnd="8dp" android:background="@color/inventory_item_bg" android:gravity="center" android:text="GIGGLES" android:textColor="@color/black" android:textSize="11sp" android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/tv_count_tray_4"
+                    android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:layout_marginStart="8dp" android:background="@color/inventory_count_bg" android:gravity="center" android:text="0" android:textColor="@color/black" android:textSize="11sp"/>
+            </LinearLayout>
+
+            <!-- Category: Facial Tissues -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginHorizontal="48dp"
+                android:background="@drawable/inventory_category_bg"
+                android:gravity="center"
+                android:text="Facial Tissues"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginHorizontal="24dp"
+                android:orientation="horizontal"
+                android:weightSum="2">
+                <TextView android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:layout_marginEnd="8dp" android:background="@color/inventory_item_bg" android:gravity="center" android:text="FEMME" android:textColor="@color/black" android:textSize="11sp" android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/tv_count_tray_5"
+                    android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:layout_marginStart="8dp" android:background="@color/inventory_count_bg" android:gravity="center" android:text="0" android:textColor="@color/black" android:textSize="11sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginHorizontal="24dp"
+                android:orientation="horizontal"
+                android:weightSum="2">
+                <TextView android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:layout_marginEnd="8dp" android:background="@color/inventory_item_bg" android:gravity="center" android:text="BLEST" android:textColor="@color/black" android:textSize="11sp" android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/tv_count_tray_6"
+                    android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:layout_marginStart="8dp" android:background="@color/inventory_count_bg" android:gravity="center" android:text="0" android:textColor="@color/black" android:textSize="11sp"/>
+            </LinearLayout>
+
+            <!-- Category: Hand Sanitizers -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginHorizontal="48dp"
+                android:background="@drawable/inventory_category_bg"
+                android:gravity="center"
+                android:text="Hand Sanitizers"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginHorizontal="24dp"
+                android:orientation="horizontal"
+                android:weightSum="2">
+                <TextView android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:layout_marginEnd="8dp" android:background="@color/inventory_item_bg" android:gravity="center" android:text="HYGIENIX" android:textColor="@color/black" android:textSize="11sp" android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/tv_count_tray_7"
+                    android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:layout_marginStart="8dp" android:background="@color/inventory_count_bg" android:gravity="center" android:text="0" android:textColor="@color/black" android:textSize="11sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginHorizontal="24dp"
+                android:orientation="horizontal"
+                android:weightSum="2">
+                <TextView android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:layout_marginEnd="8dp" android:background="@color/inventory_item_bg" android:gravity="center" android:text="ALCOSAFE" android:textColor="@color/black" android:textSize="11sp" android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/tv_count_tray_8"
+                    android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:layout_marginStart="8dp" android:background="@color/inventory_count_bg" android:gravity="center" android:text="0" android:textColor="@color/black" android:textSize="11sp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
