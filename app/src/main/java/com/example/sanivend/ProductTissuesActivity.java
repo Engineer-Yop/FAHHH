@@ -7,8 +7,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 /**
- * Facial Tissues: price and expiry are saved to /trays/tray_N in Firebase,
- * so the vending machine picks up the change without a new upload.
+ * Facial Tissues: price and expiry are saved to /devices/{id}/trays/tray_N in Firebase
+ * of the open machine, so it picks up the change without a new upload.
  */
 public class ProductTissuesActivity extends BaseActivity {
 
@@ -17,6 +17,7 @@ public class ProductTissuesActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (!DeviceSession.requireDevice(this)) return;
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_product_tissues);
 

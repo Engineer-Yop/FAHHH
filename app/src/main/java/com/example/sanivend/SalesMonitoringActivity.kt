@@ -13,7 +13,7 @@ import java.util.*
 
 class SalesMonitoringActivity : BaseActivity() {
 
-    private lateinit var db: DatabaseReference
+    private var ordersRef: DatabaseReference? = null
     private var ordersListener: ValueEventListener? = null
 
     private lateinit var rvNapkins: RecyclerView
@@ -45,9 +45,8 @@ class SalesMonitoringActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!DeviceSession.requireDevice(this)) return
         setContentView(R.layout.activity_sales_monitoring)
-
-        db = FirebaseDatabase.getInstance().reference
 
         setupRecyclerViews()
         setupButtons()
@@ -94,7 +93,8 @@ class SalesMonitoringActivity : BaseActivity() {
     }
 
     private fun observeOrders() {
-        val ordersRef = db.child("orders")
+        val ref = DeviceSession.ref(this, "orders")      // /devices/{open machine}/orders
+        ordersRef = ref
         ordersListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val napkinsList = mutableListOf<SalesTransaction>()
@@ -103,7 +103,12 @@ class SalesMonitoringActivity : BaseActivity() {
                 val sanitizersList = mutableListOf<SalesTransaction>()
 
                 for (child in snapshot.children) {
-                    val order = child.getValue(Order::class.java) ?: continue
+                    if (child.key == "summary") continue
+                    val order = try {
+                        child.getValue(Order::class.java)
+                    } catch (e: DatabaseException) {
+                        null
+                    } ?: continue
                     
                     // Map tray to product name
                     val productName = trayMapping[order.tray] ?: "Unknown Tray ${order.tray}"
@@ -169,11 +174,11 @@ class SalesMonitoringActivity : BaseActivity() {
                 Log.e("SalesMonitoring", "Database error: ${error.message}")
             }
         }
-        ordersRef.addValueEventListener(ordersListener!!)
+        ref.addValueEventListener(ordersListener!!)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        ordersListener?.let { db.child("orders").removeEventListener(it) }
+        ordersListener?.let { ordersRef?.removeEventListener(it) }
     }
 }

@@ -32,6 +32,7 @@ public class GraphActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
+        if (!DeviceSession.requireDevice(this)) return;
         setContentView(R.layout.activity_graph);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -47,9 +48,16 @@ public class GraphActivity extends BaseActivity {
         btnMonthly = findViewById(R.id.btn_monthly);
         btnAnnually = findViewById(R.id.btn_annually);
         
-        timeframeButtons.add(btnAnnually); 
-        timeframeButtons.add(btnWeekly);   
-        timeframeButtons.add(btnMonthly);  
+        // Today (hourly) · This Week (Sun–Sat) · This Year (Jan–Dec)
+        btnAnnually.setText("Today");
+        btnWeekly.setText("This Week");
+        btnMonthly.setText("This Year");
+        btnAnnually.setTag(SalesBuckets.TODAY);
+        btnWeekly.setTag(SalesBuckets.WEEK);
+        btnMonthly.setTag(SalesBuckets.YEAR);
+        timeframeButtons.add(btnAnnually);
+        timeframeButtons.add(btnWeekly);
+        timeframeButtons.add(btnMonthly);
 
         // Category buttons
         catAll = findViewById(R.id.cat_all);
@@ -67,13 +75,14 @@ public class GraphActivity extends BaseActivity {
         setupViewModel();
         setupFilters();
         
-        // Default View: Monthly (Jan - Dec)
-        setMode("Monthly", monthlyLabels);
+        // Default view: this year (Jan - Dec)
+        setMode(SalesBuckets.YEAR, monthlyLabels);
         setCategory(null);
     }
 
     private void setupViewModel() {
         viewModel = new ViewModelProvider(this).get(AnalyticsViewModel.class);
+        viewModel.setDevice(DeviceSession.id(this));
         
         viewModel.getChartData().observe(this, data -> {
             if (data != null) {
@@ -83,10 +92,9 @@ public class GraphActivity extends BaseActivity {
     }
 
     private void setupFilters() {
-        // Annually button shows 12am to 11pm (24h) as requested
-        btnAnnually.setOnClickListener(v -> setMode("Annually", hourlyLabels));
-        btnWeekly.setOnClickListener(v -> setMode("Weekly", weeklyLabels));
-        btnMonthly.setOnClickListener(v -> setMode("Monthly", monthlyLabels));
+        btnAnnually.setOnClickListener(v -> setMode(SalesBuckets.TODAY, hourlyLabels));
+        btnWeekly.setOnClickListener(v -> setMode(SalesBuckets.WEEK, weeklyLabels));
+        btnMonthly.setOnClickListener(v -> setMode(SalesBuckets.YEAR, monthlyLabels));
 
         catAll.setOnClickListener(v -> setCategory(null));
         catNapkins.setOnClickListener(v -> setCategory("Sanitary Napkins"));
@@ -100,7 +108,7 @@ public class GraphActivity extends BaseActivity {
         viewModel.setMode(mode);
         
         for (Button btn : timeframeButtons) {
-            btn.setSelected(btn.getText().toString().equalsIgnoreCase(mode));
+            btn.setSelected(mode.equals(btn.getTag()));
         }
     }
 

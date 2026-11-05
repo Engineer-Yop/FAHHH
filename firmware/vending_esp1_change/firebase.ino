@@ -2,11 +2,13 @@
 //  firebase.ino — Firebase Realtime Database (HTTP, no library)
 //  ESP32 #1 (UI & Payment)
 //
-//  Writes:  /orders/order_N, /orders/summary
-//           /totals/daily/YYYY-MM-DD, /totals/weekly/YYYY-Www
-//           /trays/tray_N/stock, /trays/tray_N/capacity, /notifications/expiry_tray_N
-//  Reads:   /trays           all trays (price, expiry, stock) in one request, every minute while idle
-//           /trays/tray_N/price   again each time that tray's button is pressed
+//  Everything is under this machine's own folder: /devices/<DEVICE_ID>/...
+//  Writes:  info (id, pairing code, last_seen heartbeat every minute)
+//           orders/order_N, orders/summary
+//           totals/daily/YYYY-MM-DD, totals/weekly/YYYY-Www
+//           trays/tray_N/stock, trays/tray_N/capacity, notifications/expiry_tray_N
+//  Reads:   trays            all trays (price, expiry, stock) in one request, every minute while idle
+//           trays/tray_N/price    again each time that tray's button is pressed
 //
 //  Price and expiry are set from the Android app. A new price is used on the
 //  next button press — no need to upload a new program.
@@ -64,6 +66,7 @@ void firebase_onConnected() {
   if (waitForTime(10000)) Serial.println("[NTP] Time: " + getFormattedDateTime());
   else                    Serial.println("[NTP] No time yet — will keep retrying.");
 
+  firebase_registerDevice();          // so the app can find and pair this machine
   firebase_loadOrderCount();
   firebase_syncTrays();                // prices, expiry (+ expiry check), stock
   lastExpiryCheckDate = getFormattedDate();
@@ -94,6 +97,7 @@ void firebase_tick() {
   }
 
   if (millis() - lastTraySync > TRAY_SYNC_MS) {
+    firebase_heartbeat();              // app shows "Online" while this keeps coming
     firebase_syncTrays();
     lastTraySync = millis();
   }
@@ -148,7 +152,9 @@ int firebase_send(const char *method, String path, String query, String payload,
   HTTPClient http;
   http.setConnectTimeout(timeoutMs);
   http.setTimeout(timeoutMs);
-  http.begin("https://" + String(FIREBASE_HOST) + path + ".json?auth=" + String(FIREBASE_AUTH) + query);
+  // Every path is inside this machine's folder: /devices/<DEVICE_ID><path>
+  http.begin("https://" + String(FIREBASE_HOST) + "/devices/" + DEVICE_ID + path +
+             ".json?auth=" + String(FIREBASE_AUTH) + query);
   if (payload.length() > 0) http.addHeader("Content-Type", "application/json");
   int code = http.sendRequest(method, payload);
   if (code == 200) { response = http.getString(); response.trim(); }
@@ -212,6 +218,25 @@ String jsonString(const String &obj, const String &key) {
 
 // ── Load from Firebase ────────────────────
 
+// Tells the app this machine exists: ID, pairing code, firmware, and a "last seen" time
+void firebase_registerDevice() {
+  String r;
+  String payload = "{\"device_id\":\"" + DEVICE_ID + "\"" +
+                   ",\"pair_code\":\"" + PAIR_CODE + "\"" +
+                   ",\"model\":\"SaniVend\"" +
+                   ",\"firmware\":\"" + String(FIRMWARE_VERSION) + "\"" +
+                   ",\"trays\":" + String(TRAY_COUNT) +
+                   ",\"last_boot\":\"" + getFormattedDateTime() + "\"" +
+                   ",\"last_seen\":{\".sv\":\"timestamp\"}}";
+  if (firebase_patch("/info", payload, r) == 200)
+    Serial.println("[Firebase] Registered as /devices/" + DEVICE_ID);
+}
+
+// Every minute: Firebase stamps its own clock, so the app can show Online/Offline
+void firebase_heartbeat() {
+  firebase_put("/info/last_seen", "{\".sv\":\"timestamp\"}");
+}
+
 // Continue numbering after the highest order_N already in Firebase,
 // so an old order is never overwritten (even if /orders/summary is missing)
 void firebase_loadOrderCount() {
@@ -234,14 +259,21 @@ void firebase_loadOrderCount() {
 // Trays not set up in the app yet keep their default price.
 void firebase_syncTrays() {
   String body;
-  if (firebase_send("GET", "/trays", "", "", body, HTTP_TIMEOUT_MS) != 200 || body == "null") {
+  if (firebase_send("GET", "/trays", "", "", body, HTTP_TIMEOUT_MS) != 200) {
     Serial.println("[Firebase] Tray sync failed — keeping current prices.");
     return;
   }
+  if (body == "null") body = "";
   bool expiryChanged = false;
   for (int i = 0; i < TRAY_COUNT; i++) {
     String obj = jsonObject(body, "tray_" + String(i + 1));
-    if (obj.length() == 0) continue;
+    if (obj.length() == 0) {           // new machine: create the tray so the app can show it
+      String r;
+      firebase_patch("/trays/tray_" + String(i + 1),
+        "{\"stock\":" + String(trayStock[i]) + ",\"capacity\":" + String(TRAY_CAPACITY) +
+        ",\"price\":" + String(trayPrices[i]) + "}", r);
+      continue;
+    }
 
     int price = jsonInt(obj, "price", -1);
     if (price > 0 && price != trayPrices[i]) {
@@ -331,7 +363,8 @@ void firebase_logOrder(int tray, int amountPaid, int change) {
 
   int price = trayPrices[tray];        // same price the customer paid against
   orderCount++;
-  if (trayStock[tray] > 0) trayStock[tray]--;
+  bool takeOne = trayStock[tray] > 0;
+  if (takeOne) trayStock[tray]--;
 
   // 1. The order itself
   firebase_put("/orders/order_" + String(orderCount),
@@ -365,9 +398,14 @@ void firebase_logOrder(int tray, int amountPaid, int change) {
     Serial.println("[Firebase] No clock — daily/weekly totals skipped for this order (no date to file it under).");
   }
 
-  // 3. Stock only — price and expiry belong to the app, so they are not overwritten
-  firebase_put("/trays/tray_" + String(tray + 1) + "/stock", String(trayStock[tray]));
-  firebase_put("/trays/tray_" + String(tray + 1) + "/capacity", String(TRAY_CAPACITY));
+  // 3. Stock only — price and expiry belong to the app, so they are not overwritten.
+  //    Firebase subtracts 1 itself, so a refill done in the app at the same time isn't lost.
+  if (takeOne) {
+    firebase_patch("/trays/tray_" + String(tray + 1),
+      "{\"stock\":" + fbIncrement(-1) + ",\"capacity\":" + String(TRAY_CAPACITY) + "}", resp);
+    int s = jsonInt(resp, "stock", -1);
+    if (s >= 0) trayStock[tray] = s;
+  }
 
   String line = "[Firebase] order_" + String(orderCount) + " logged | Tray " + String(tray + 1) +
                 " | Price P" + String(price) + " | Paid P" + String(amountPaid) +

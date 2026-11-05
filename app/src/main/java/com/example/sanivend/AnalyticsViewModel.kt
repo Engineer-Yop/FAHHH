@@ -7,101 +7,67 @@ import com.google.firebase.database.*
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * Sales Graph data for the open machine: items sold per hour (Today),
+ * per day (This Week, Sun–Sat) or per month (This Year), read from /devices/{id}/orders.
+ */
 class AnalyticsViewModel : ViewModel() {
-    private val db = FirebaseDatabase.getInstance().reference
-    
+
     private val _chartData = MutableLiveData<FloatArray>()
     val chartData: LiveData<FloatArray> = _chartData
 
-    private val _currentMode = MutableLiveData<String>("Monthly")
-    private val _currentCategory = MutableLiveData<String?>(null)
+    private var deviceId: String? = null
+    private var mode: String = SalesBuckets.YEAR
+    private var category: String? = null
 
     private var ordersListener: ValueEventListener? = null
     private var ordersRef: DatabaseReference? = null
 
-    fun setMode(mode: String) {
-        _currentMode.value = mode
+    fun setDevice(id: String) {
+        deviceId = id
         refreshObservation()
     }
 
-    fun setCategory(category: String?) {
-        _currentCategory.value = category
+    fun setMode(newMode: String) {
+        mode = newMode
+        refreshObservation()
+    }
+
+    fun setCategory(newCategory: String?) {
+        category = newCategory
         refreshObservation()
     }
 
     private fun refreshObservation() {
-        val mode = _currentMode.value ?: "Monthly"
-        val category = _currentCategory.value
-        
-        // Remove old listener
+        val id = deviceId ?: return
+        val mode = this.mode
+        val category = this.category
+
         ordersListener?.let { ordersRef?.removeEventListener(it) }
+        ordersRef = FirebaseDatabase.getInstance().reference.child("devices").child(id).child("orders")
 
-        ordersRef = db.child("orders")
-        
-        val now = Calendar.getInstance()
-        val currentYear = now.get(Calendar.YEAR).toString()
-        val currentMonth = String.format("%02d", now.get(Calendar.MONTH) + 1)
-        val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(now.time)
-
-        val size = when (mode) {
-            "Annually" -> 24 // Hourly points
-            "Weekly" -> 8   // Last 7 days + current? Or Mon-Sun. Let's assume standard layout.
-            "Monthly" -> 12 // Jan-Dec
-            else -> 12
-        }
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        val size = SalesBuckets.size(mode)
 
         ordersListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val data = FloatArray(size) { 0f }
-                
                 for (child in snapshot.children) {
-                    val order = child.getValue(Order::class.java) ?: continue
-                    
-                    // Filter by Category if selected
+                    if (child.key == "summary") continue
+                    val order = try {
+                        child.getValue(Order::class.java)
+                    } catch (e: DatabaseException) {
+                        null
+                    } ?: continue
                     if (category != null && !isTrayInCategory(order.tray, category)) continue
-
-                    when (mode) {
-                        "Annually" -> { // "Annually" button actually shows Hourly data for Today
-                            if (order.date == todayDate) {
-                                try {
-                                    // datetime format: "2026-05-29 11:56:58"
-                                    val hour = order.datetime.split(" ")[1].split(":")[0].toInt()
-                                    if (hour in 0 until size) {
-                                        data[hour] += 1f // Increment item count
-                                    }
-                                } catch (e: Exception) {}
-                            }
-                        }
-                        "Weekly" -> { // Daily count for current month
-                            if (order.date.startsWith("$currentYear-$currentMonth")) {
-                                try {
-                                    val day = order.date.split("-")[2].toInt()
-                                    // This is a simplified mapping to the 8 points on your graph
-                                    // For a real weekly view, we'd map to DayOfWeek. 
-                                    // Using day-of-month modulo size for now to show variety.
-                                    val index = (day - 1) % size
-                                    data[index] += 1f
-                                } catch (e: Exception) {}
-                            }
-                        }
-                        "Monthly" -> { // Monthly count for current year
-                            if (order.date.startsWith(currentYear)) {
-                                try {
-                                    val month = order.date.split("-")[1].toInt()
-                                    if (month in 1..12) {
-                                        data[month - 1] += 1f
-                                    }
-                                } catch (e: Exception) {}
-                            }
-                        }
-                    }
+                    val i = SalesBuckets.index(mode, order.date, order.datetime, today)
+                    if (i in 0 until size) data[i] += 1f       // one item per order
                 }
                 _chartData.postValue(data)
             }
 
             override fun onCancelled(error: DatabaseError) {}
         }
-        
         ordersRef?.addValueEventListener(ordersListener!!)
     }
 

@@ -5,8 +5,10 @@
     <string name="username_hint">Username</string>
     <string name="password_hint">Password</string>
     <string name="login_button_text">Log in</string>
-    <string name="signup_text">Sign up</string>
-    <string name="hello_admin">Hello, admin123!</string>
+    <string name="signup_text">No account yet? Sign up</string>
+    <string name="email_hint">Email</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="hello_admin">Hello!</string>
     <string name="assist_question">How may we assist you?</string>
     <string name="sales_monitoring">Sales Monitoring</string>
     <string name="inventory_tracking">Inventory Tracking</string>

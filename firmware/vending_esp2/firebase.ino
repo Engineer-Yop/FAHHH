@@ -1,7 +1,8 @@
   // ─────────────────────────────────────────
 //  firebase.ino — Firebase log for ESP32 #2 (HTTP, no library)
-//  Writes: /vend_logs/log_N   {type, tray/amount, result, datetime}
-//          /vend_logs/count
+//  Writes: /devices/<ID>/vend_logs/log_N   {type, tray/amount, result, datetime}
+//          /devices/<ID>/vend_logs/count
+//  The machine ID comes from ESP32 #1 over UART ("ID:SV-XXXXXX").
 //  Only used when USE_FIREBASE is 1 (vending_esp2.ino)
 // ─────────────────────────────────────────
 #if USE_FIREBASE
@@ -37,9 +38,7 @@ void firebase_init() {
   struct tm t; int nr = 0;
   while (!getLocalTime(&t) && nr < 10) { delay(1000); nr++; }
 
-  String v = fb2_get("/vend_logs/count");
-  if (v != "null") logCount = v.toInt();
-  Serial.println("[Firebase] Log count: " + String(logCount));
+  Serial.println("[Firebase] Ready. Waiting for the machine ID from ESP32 #1...");
 }
 
 void firebase_tick() {
@@ -55,7 +54,8 @@ String fb2_dateTime() {
 }
 
 String fb2_url(String path) {
-  return "https://" + String(FIREBASE_HOST) + path + ".json?auth=" + String(FIREBASE_AUTH);
+  return "https://" + String(FIREBASE_HOST) + "/devices/" + deviceId + path +
+         ".json?auth=" + String(FIREBASE_AUTH);
 }
 
 String fb2_get(String path) {
@@ -76,6 +76,15 @@ int fb2_put(String path, String payload) {
 
 void fb2_write(String payload) {
   if (WiFi.status() != WL_CONNECTED) return;
+  if (deviceId.length() == 0) {
+    Serial.println("[Firebase] No machine ID from ESP32 #1 yet — log skipped.");
+    return;
+  }
+  if (deviceIdChanged) {                       // first log for this machine: continue its count
+    deviceIdChanged = false;
+    String v = fb2_get("/vend_logs/count");
+    logCount = (v != "null") ? v.toInt() : 0;
+  }
   logCount++;
   fb2_put("/vend_logs/log_" + String(logCount), payload);
   fb2_put("/vend_logs/count", String(logCount));

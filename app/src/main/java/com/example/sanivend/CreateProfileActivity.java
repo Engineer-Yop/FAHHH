@@ -104,7 +104,7 @@ public class CreateProfileActivity extends BaseActivity {
                             .addOnCompleteListener(task -> {
                                 if (task.isSuccessful()) {
                                     Toast.makeText(CreateProfileActivity.this, "Profile Created!", Toast.LENGTH_SHORT).show();
-                                    Intent intent = new Intent(CreateProfileActivity.this, DashboardActivity.class);
+                                    Intent intent = new Intent(CreateProfileActivity.this, DeviceListActivity.class);
                                     startActivity(intent);
                                     finish();
                                 } else {

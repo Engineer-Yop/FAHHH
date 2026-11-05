@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────
 //  uart.ino — UART2 to ESP32 #2
-//  Sends:    VEND:X   CHANGE:X
+//  Sends:    ID:SV-XXXXXX   VEND:X   CHANGE:X
 //  Receives: SUCCESS:X  FAILED:X  CHANGE_DONE
 // ─────────────────────────────────────────
 
@@ -15,8 +15,15 @@ void uart_flush() {
   while (Serial2.available()) Serial2.read();
 }
 
+// Tells ESP32 #2 which machine it belongs to (its Firebase logs go under /devices/<ID>)
+void uart_sendDeviceId() {
+  Serial2.print("ID:" + DEVICE_ID + "\n");
+  Serial.println("[UART] Sent: ID:" + DEVICE_ID);
+}
+
 void uart_sendVend(int tray) {
   uart_flush();
+  Serial2.print("ID:" + DEVICE_ID + "\n");     // repeated so ESP32 #2 always knows it
   String cmd = "VEND:" + String(tray) + "\n";
   Serial2.print(cmd);
   Serial.print("[UART] Sent: " + cmd);

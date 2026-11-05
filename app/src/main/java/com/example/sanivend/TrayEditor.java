@@ -14,7 +14,6 @@ import androidx.annotation.NonNull;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.ParseException;
@@ -30,11 +29,11 @@ import java.util.Map;
 /**
  * Connects one product card (price + expiry) to its tray in Firebase.
  *
- * The vending machine (ESP32 #1) reads the same paths:
- *   /trays/tray_N/price    whole pesos, e.g. 30
- *   /trays/tray_N/expiry   "yyyy-MM-dd", e.g. "2026-12-26"
- *   /trays/tray_N/product  product name (for people reading the database)
- *   /trays/tray_N/stock    written by the ESP32 after every sale
+ * The vending machine (ESP32 #1) reads the same paths, under its own ID:
+ *   /devices/{id}/trays/tray_N/price    whole pesos, e.g. 30
+ *   /devices/{id}/trays/tray_N/expiry   "yyyy-MM-dd", e.g. "2026-12-26"
+ *   /devices/{id}/trays/tray_N/product  product name (for people reading the database)
+ *   /devices/{id}/trays/tray_N/stock    written by the ESP32 after every sale
  *
  * Saving a price here changes it on the machine without uploading a new program:
  * the ESP32 reads the tray's price every time a customer presses that tray's button,
@@ -47,7 +46,7 @@ public class TrayEditor {
     public static final int MAX_PRICE = 500;
 
     private final Activity activity;
-    private final DatabaseReference trays = FirebaseDatabase.getInstance().getReference("trays");
+    private final DatabaseReference trays;          // /devices/{open machine}/trays
     private final List<DatabaseReference> refs = new ArrayList<>();
     private final List<ValueEventListener> listeners = new ArrayList<>();
 
@@ -56,6 +55,7 @@ public class TrayEditor {
 
     public TrayEditor(Activity activity) {
         this.activity = activity;
+        this.trays = DeviceSession.ref(activity, "trays");
         dbDate.setLenient(false);
     }
 
@@ -168,8 +168,8 @@ public class TrayEditor {
             ref.updateChildren(update)
                     .addOnSuccessListener(x -> {
                         // Old alert no longer applies; the ESP32 writes a new one if still near expiry.
-                        FirebaseDatabase.getInstance()
-                                .getReference("notifications/expiry_tray_" + tray)
+                        DeviceSession.ref(activity, "notifications")
+                                .child("expiry_tray_" + tray)
                                 .removeValue();
                         toast(product + " expiry set to " + toShowDate(expiry) + ".");
                     })

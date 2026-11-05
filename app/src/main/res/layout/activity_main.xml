@@ -53,10 +53,10 @@
             android:id="@+id/username_input"
             android:layout_width="0dp"
             android:layout_height="50dp"
-            android:autofillHints="username"
+            android:autofillHints="emailAddress"
             android:background="@drawable/input_background"
-            android:hint="@string/username_hint"
-            android:inputType="textPersonName"
+            android:hint="@string/email_hint"
+            android:inputType="textEmailAddress"
             android:paddingHorizontal="16dp"
             android:textColor="@color/text_primary"
             android:textColorHint="@color/text_primary"
@@ -94,6 +94,21 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/password_input" />
+
+        <TextView
+            android:id="@+id/forgot_password"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="4dp"
+            android:text="@string/forgot_password"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/login_button" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

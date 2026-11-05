@@ -11,6 +11,7 @@
 //    lcd.ino           LCD 2004 screens
 //    uart.ino          UART2 link to ESP32 #2
 //    change.ino        change servos on GPIO 25/26/27/32 (moved here from ESP32 #2)
+//    device.ino        machine ID (from the chip's MAC) + pairing code for the app
 //
 //  Libraries: LiquidCrystal_I2C, PCF8574 (with readButton), ESP32Servo
 // ─────────────────────────────────────────
@@ -19,6 +20,13 @@
 #include <PCF8574.h>
 #include <ESP32Servo.h>   // here too: change.ino uses the Servo type in a function, and Arduino
                           // puts its function list above the other tabs' #includes
+#include <Preferences.h>  // keeps the pairing code in flash (device.ino)
+
+#define FIRMWARE_VERSION "2.0"
+
+// ── This machine (set in device.ino) ─────
+String DEVICE_ID = "";    // e.g. "SV-A1B2C3"
+String PAIR_CODE = "";    // 6 digits, shown on the LCD at start-up
 
 // ── LCD (change to 0x3F if 0x27 doesn't work) ──
 LiquidCrystal_I2C lcd(0x27, 20, 4);
@@ -60,15 +68,20 @@ void setup() {
 
   Wire.begin(21, 22);
 
+  device_init();                   // machine ID + pairing code
   lcd_init();
   buttons_init();
   coin_init();
   uart_init();
+  uart_sendDeviceId();             // ESP32 #2 logs under the same machine ID
   change_init();                   // change servos on this board now
   coin_inhibit(true);              // coins off until a tray is selected
 
+  lcd_showDeviceInfo();            // ID + pairing code, so the owner can add it in the app
+  delay(8000);
+
   lcd_showMessage("Connecting WiFi...", "Please wait");
-  firebase_init();                 // WiFi + NTP + load order count and trays (price/stock/expiry)
+  firebase_init();                 // WiFi + NTP + register machine + load trays (price/stock/expiry)
 
   Serial.println("ESP32 #1 ready.");
   lcd_showWelcome();

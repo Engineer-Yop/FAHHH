@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="8dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Turn the machine on. Its screen shows the Machine ID and, for a few seconds at start-up, the 6-digit pairing code."
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/input_device_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:hint="Machine ID (e.g. SV-A1B2C3)"
+        android:inputType="textCapCharacters|textNoSuggestions"
+        android:maxLength="9" />
+
+    <EditText
+        android:id="@+id/input_pair_code"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="6-digit pairing code"
+        android:inputType="number"
+        android:maxLength="6" />
+
+    <EditText
+        android:id="@+id/input_device_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Name (optional), e.g. Lobby"
+        android:inputType="textCapWords"
+        android:maxLength="30" />
+</LinearLayout>

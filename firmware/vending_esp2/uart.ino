@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────
 //  uart.ino — UART2 from ESP32 #1
-//  Receives: VEND:X   CHANGE:X
+//  Receives: ID:SV-XXXXXX   VEND:X   CHANGE:X
 //  Sends:    SUCCESS:X  FAILED:X  CHANGE_DONE
 //
 //  One reader handles both commands, so a CHANGE line
@@ -26,6 +26,15 @@ int uart_readCommand(int *value) {
     int tray = cmd.substring(5).toInt();
     if (tray >= 0 && tray <= 7) { *value = tray; return CMD_VEND; }
     Serial.println("[UART] Invalid tray: " + String(tray));
+
+  } else if (cmd.startsWith("ID:")) {          // which machine this board belongs to
+    String id = cmd.substring(3);
+    id.trim();
+    if (id.length() > 0 && id != deviceId) {
+      deviceId = id;
+      deviceIdChanged = true;
+      Serial.println("[UART] Machine ID: " + deviceId);
+    }
 
   } else if (cmd.startsWith("CHANGE:")) {
     int amount = cmd.substring(7).toInt();

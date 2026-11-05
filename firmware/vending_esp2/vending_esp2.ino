@@ -48,6 +48,10 @@ Adafruit_PWMServoDriver pca9685 = Adafruit_PWMServoDriver(PCA9685_ADDR);
 #define CH_10PESO      14    // MG90S
 #define CH_5PESO_B     15    // MG90S
 
+// ── Machine ID (sent by ESP32 #1 as "ID:SV-XXXXXX") ──
+String deviceId = "";            // Firebase logs go under /devices/<deviceId>/vend_logs
+bool   deviceIdChanged = false;
+
 // ── UART command codes ───────────────────
 #define CMD_NONE       0
 #define CMD_VEND       1

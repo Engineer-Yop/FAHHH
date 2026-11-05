@@ -14,15 +14,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Sanivend">
 
-        <!-- Set DashboardActivity as the entry point -->
+        <!-- Login is the entry point; signed-in users skip straight to My Machines -->
         <activity
-            android:name=".DashboardActivity"
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".DeviceListActivity" android:exported="false" />
+        <activity android:name=".DashboardActivity" android:exported="false" />
 
         <activity
             android:name=".LoginActivity"
@@ -41,7 +44,6 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".MainActivity" android:exported="false" />
         <activity android:name=".SignUpActivity" android:exported="false" />
         <activity android:name=".CreateProfileActivity" android:exported="false" />
         <activity android:name=".VerificationActivity" android:exported="false" />

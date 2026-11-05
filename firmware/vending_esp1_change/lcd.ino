@@ -22,7 +22,16 @@ void lcd_showWelcome() {
   lcd.setCursor(0, 0);  lcd.print("** VENDO MACHINE **");
   lcd.setCursor(2, 1);  lcd.print("Select your tray");
   lcd.setCursor(2, 2);  lcd.print("then insert coins");
-  lcd.setCursor(6, 3);  lcd.print("Ready...");
+  lcd.setCursor(3, 3);  lcd.print("ID: " + DEVICE_ID);    // e.g. "ID: SV-A1B2C3"
+}
+
+// Start-up screen: what the owner types in the app's "Add Machine"
+void lcd_showDeviceInfo() {
+  lcd.clear();
+  lcd.setCursor(0, 0);  lcd.print("SaniVend  v" FIRMWARE_VERSION);
+  lcd.setCursor(0, 1);  lcd.print("ID: " + DEVICE_ID);
+  lcd.setCursor(0, 2);  lcd.print("Pair code: " + PAIR_CODE);
+  lcd.setCursor(0, 3);  lcd.print("Add it in the app");
 }
 
 void lcd_showSelected(int tray) {
