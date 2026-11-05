@@ -52,19 +52,19 @@ public class InventoryTrackingActivity extends BaseActivity {
     }
 
     private void observeInventory() {
-        // Listening to "inventory" node. 
-        // ESP32 should update this node: inventory/tray_1, inventory/tray_2, etc.
+        // The ESP32 writes the count after every sale to /trays/tray_N/stock
         inventoryListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 for (DataSnapshot child : snapshot.getChildren()) {
                     try {
-                        String key = child.getKey(); 
+                        String key = child.getKey();
                         if (key != null && key.startsWith("tray_")) {
                             int trayNum = Integer.parseInt(key.replace("tray_", ""));
-                            Object value = child.getValue();
-                            String quantityStr = (value != null) ? String.valueOf(value) : "0";
-                            
+                            Object value = child.child("stock").getValue();
+                            String quantityStr = (value != null)
+                                    ? String.valueOf(TrayEditor.toInt(value)) : "0";
+
                             TextView tv = trayViews.get(trayNum);
                             if (tv != null) {
                                 tv.setText(quantityStr);
@@ -79,14 +79,14 @@ public class InventoryTrackingActivity extends BaseActivity {
             @Override
             public void onCancelled(@NonNull DatabaseError error) {}
         };
-        db.child("inventory").addValueEventListener(inventoryListener);
+        db.child("trays").addValueEventListener(inventoryListener);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         if (inventoryListener != null) {
-            db.child("inventory").removeEventListener(inventoryListener);
+            db.child("trays").removeEventListener(inventoryListener);
         }
     }
 }

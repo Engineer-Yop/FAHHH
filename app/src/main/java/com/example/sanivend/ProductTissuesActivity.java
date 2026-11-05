@@ -1,16 +1,18 @@
 package com.example.sanivend;
 
-import android.app.AlertDialog;
 import android.os.Bundle;
-import android.text.InputType;
-import android.widget.EditText;
-import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+/**
+ * Facial Tissues: price and expiry are saved to /trays/tray_N in Firebase,
+ * so the vending machine picks up the change without a new upload.
+ */
 public class ProductTissuesActivity extends BaseActivity {
+
+    private TrayEditor trayEditor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,44 +26,22 @@ public class ProductTissuesActivity extends BaseActivity {
             return insets;
         });
 
-        // Femme Edit Listeners
-        findViewById(R.id.btn_edit_expiry_femme).setOnClickListener(v -> 
-            showEditDialog("Edit Expiry Date", "Expiry: ", findViewById(R.id.tv_expiry_femme), "Expiration Date: ")
-        );
-        findViewById(R.id.btn_edit_price_femme).setOnClickListener(v -> 
-            showEditDialog("Edit Price", "₱", findViewById(R.id.tv_price_femme), "Price: ₱")
-        );
+        trayEditor = new TrayEditor(this);
 
-        // Blest Edit Listeners
-        findViewById(R.id.btn_edit_expiry_blest).setOnClickListener(v -> 
-            showEditDialog("Edit Expiry Date", "Expiry: ", findViewById(R.id.tv_expiry_blest), "Expiration Date: ")
-        );
-        findViewById(R.id.btn_edit_price_blest).setOnClickListener(v -> 
-            showEditDialog("Edit Price", "₱", findViewById(R.id.tv_price_blest), "Price: ₱")
-        );
+        // Femme = Tray 5
+        trayEditor.bind(5, "FEMME",
+                findViewById(R.id.tv_price_femme), findViewById(R.id.tv_expiry_femme),
+                findViewById(R.id.btn_edit_price_femme), findViewById(R.id.btn_edit_expiry_femme));
+
+        // Blest = Tray 6
+        trayEditor.bind(6, "BLEST",
+                findViewById(R.id.tv_price_blest), findViewById(R.id.tv_expiry_blest),
+                findViewById(R.id.btn_edit_price_blest), findViewById(R.id.btn_edit_expiry_blest));
     }
 
-    private void showEditDialog(String title, String hint, TextView targetView, String prefix) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(title);
-
-        final EditText input = new EditText(this);
-        input.setHint(hint);
-        if (title.contains("Price")) {
-            input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        } else {
-            input.setInputType(InputType.TYPE_CLASS_DATETIME | InputType.TYPE_DATETIME_VARIATION_DATE);
-        }
-        builder.setView(input);
-
-        builder.setPositiveButton("Save", (dialog, which) -> {
-            String newValue = input.getText().toString();
-            if (!newValue.isEmpty()) {
-                targetView.setText(prefix + newValue);
-            }
-        });
-        builder.setNegativeButton("Cancel", (dialog, id) -> dialog.cancel());
-
-        builder.show();
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (trayEditor != null) trayEditor.release();
     }
 }

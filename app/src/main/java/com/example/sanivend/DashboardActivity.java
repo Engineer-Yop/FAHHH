@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.Manifest;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -32,8 +33,8 @@ public class DashboardActivity extends BaseActivity {
             return insets;
         });
 
-        // Initialize Notification Channel
-        InventoryNotificationUtils.INSTANCE.createNotificationChannel(this);
+        // Notification channels for stock and expiry alerts
+        TrayAlerts.createChannels(this);
         
         // Request Notification Permission for Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -42,13 +43,17 @@ public class DashboardActivity extends BaseActivity {
             }
         }
 
-        // Schedule Inventory Check Worker (Every 1 hour for testing, can be 12h for production)
-        PeriodicWorkRequest inventoryWorkRequest = new PeriodicWorkRequest.Builder(InventoryWorker.class, 1, TimeUnit.HOURS)
+        // Live alerts while the app is running
+        TrayAlertMonitor.start(this);
+
+        // Background check every 15 minutes (the shortest Android allows), even when the app is closed.
+        // UPDATE replaces the old 1-hour schedule on phones that already have it.
+        PeriodicWorkRequest inventoryWorkRequest = new PeriodicWorkRequest.Builder(InventoryWorker.class, 15, TimeUnit.MINUTES)
                 .build();
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
                 "InventoryCheck",
-                ExistingPeriodicWorkPolicy.KEEP,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 inventoryWorkRequest
         );
 
@@ -67,5 +72,15 @@ public class DashboardActivity extends BaseActivity {
         findViewById(R.id.btn_view_graph).setOnClickListener(v -> {
             startActivity(new Intent(DashboardActivity.this, GraphActivity.class));
         });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 101 && grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            TrayAlerts.checkNow(this);   // show any alerts that were waiting for permission
+        }
     }
 }

@@ -1,16 +1,18 @@
 package com.example.sanivend;
 
-import android.app.AlertDialog;
 import android.os.Bundle;
-import android.text.InputType;
-import android.widget.EditText;
-import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+/**
+ * Hand Sanitizers: price and expiry are saved to /trays/tray_N in Firebase,
+ * so the vending machine picks up the change without a new upload.
+ */
 public class ProductSanitizersActivity extends BaseActivity {
+
+    private TrayEditor trayEditor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,44 +26,22 @@ public class ProductSanitizersActivity extends BaseActivity {
             return insets;
         });
 
-        // Hygienix Edit Listeners
-        findViewById(R.id.btn_edit_expiry_hygienix).setOnClickListener(v -> 
-            showEditDialog("Edit Expiry Date", "Expiry: ", findViewById(R.id.tv_expiry_hygienix), "Expiration Date: ")
-        );
-        findViewById(R.id.btn_edit_price_hygienix).setOnClickListener(v -> 
-            showEditDialog("Edit Price", "₱", findViewById(R.id.tv_price_hygienix), "Price: ₱")
-        );
+        trayEditor = new TrayEditor(this);
 
-        // Alcosafe Edit Listeners
-        findViewById(R.id.btn_edit_expiry_alcosafe).setOnClickListener(v -> 
-            showEditDialog("Edit Expiry Date", "Expiry: ", findViewById(R.id.tv_expiry_alcosafe), "Expiration Date: ")
-        );
-        findViewById(R.id.btn_edit_price_alcosafe).setOnClickListener(v -> 
-            showEditDialog("Edit Price", "₱", findViewById(R.id.tv_price_alcosafe), "Price: ₱")
-        );
+        // Hygienix = Tray 7
+        trayEditor.bind(7, "HYGIENIX",
+                findViewById(R.id.tv_price_hygienix), findViewById(R.id.tv_expiry_hygienix),
+                findViewById(R.id.btn_edit_price_hygienix), findViewById(R.id.btn_edit_expiry_hygienix));
+
+        // Alcosafe = Tray 8
+        trayEditor.bind(8, "ALCOSAFE",
+                findViewById(R.id.tv_price_alcosafe), findViewById(R.id.tv_expiry_alcosafe),
+                findViewById(R.id.btn_edit_price_alcosafe), findViewById(R.id.btn_edit_expiry_alcosafe));
     }
 
-    private void showEditDialog(String title, String hint, TextView targetView, String prefix) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(title);
-
-        final EditText input = new EditText(this);
-        input.setHint(hint);
-        if (title.contains("Price")) {
-            input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        } else {
-            input.setInputType(InputType.TYPE_CLASS_DATETIME | InputType.TYPE_DATETIME_VARIATION_DATE);
-        }
-        builder.setView(input);
-
-        builder.setPositiveButton("Save", (dialog, which) -> {
-            String newValue = input.getText().toString();
-            if (!newValue.isEmpty()) {
-                targetView.setText(prefix + newValue);
-            }
-        });
-        builder.setNegativeButton("Cancel", (dialog, id) -> dialog.cancel());
-
-        builder.show();
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (trayEditor != null) trayEditor.release();
     }
 }
