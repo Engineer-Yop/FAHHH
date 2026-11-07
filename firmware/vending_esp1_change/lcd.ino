@@ -49,6 +49,14 @@ void lcd_showCheckingPrice(int tray) {
   lcd.setCursor(0, 2);  lcd.print("Checking price...");
 }
 
+// The ToF sensor reads 0 items in this tray
+void lcd_showEmpty(int tray) {
+  lcd.clear();
+  lcd.setCursor(0, 0);  lcd.print("Tray " + String(tray + 1) + " is EMPTY");
+  lcd.setCursor(0, 2);  lcd.print("Please choose");
+  lcd.setCursor(0, 3);  lcd.print("another tray");
+}
+
 // Only rewrites the balance row
 void lcd_showBalance() {
   lcd.setCursor(0, 2);

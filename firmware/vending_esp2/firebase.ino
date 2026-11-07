@@ -2,6 +2,7 @@
 //  firebase.ino — Firebase log for ESP32 #2 (HTTP, no library)
 //  Writes: /devices/<ID>/vend_logs/log_N   {type, tray/amount, result, datetime}
 //          /devices/<ID>/vend_logs/count
+//          /devices/<ID>/trays/tray_N  {stock, stock_source, sensor_mm}  (stock.ino)
 //  The machine ID comes from ESP32 #1 over UART ("ID:SV-XXXXXX").
 //  Only used when USE_FIREBASE is 1 (vending_esp2.ino)
 // ─────────────────────────────────────────
@@ -71,6 +72,16 @@ int fb2_put(String path, String payload) {
   http.addHeader("Content-Type", "application/json");
   int code = http.PUT(payload); http.end();
   if (code != 200) Serial.println("[Firebase] PUT " + path + " failed, HTTP " + String(code));
+  return code;
+}
+
+// PATCH changes only the fields given (used for tray stock)
+int fb2_patch(String path, String payload) {
+  if (WiFi.status() != WL_CONNECTED || deviceId.length() == 0) return -1;
+  HTTPClient http; http.setTimeout(5000); http.begin(fb2_url(path));
+  http.addHeader("Content-Type", "application/json");
+  int code = http.PATCH(payload); http.end();
+  if (code != 200) Serial.println("[Firebase] PATCH " + path + " failed, HTTP " + String(code));
   return code;
 }
 

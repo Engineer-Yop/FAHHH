@@ -22,7 +22,7 @@
                           // puts its function list above the other tabs' #includes
 #include <Preferences.h>  // keeps the pairing code in flash (device.ino)
 
-#define FIRMWARE_VERSION "2.0"
+#define FIRMWARE_VERSION "2.1"
 
 // ── This machine (set in device.ino) ─────
 String DEVICE_ID = "";    // e.g. "SV-A1B2C3"
@@ -52,6 +52,10 @@ PCF8574 pcf(0x20);
 int    trayPrices[TRAY_COUNT] = {5, 5, 5, 5, 10, 10, 10, 10};
 int    trayStock[TRAY_COUNT]  = {7, 7, 7, 7, 7, 7, 7, 7};
 String trayExpiry[TRAY_COUNT] = {"", "", "", "", "", "", "", ""};
+// true = ESP32 #2 measures this tray with its ToF sensor ("stock_source":"sensor" in Firebase):
+// this board then doesn't count it down, and won't sell it when it reads 0
+bool   traySensor[TRAY_COUNT] = {false, false, false, false, false, false, false, false};
+#define ID_RESEND_MS   30000       // remind ESP32 #2 of the machine ID while idle
 
 // ── State machine ────────────────────────
 enum State { IDLE, TRAY_SELECTED, PAYING, WAITING, CHANGING };
@@ -61,6 +65,7 @@ int  selectedTray = -1;
 int  coinBalance  = 0;
 int  changeAmount = 0;
 unsigned long stateStart = 0;
+unsigned long lastIdSend = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -75,6 +80,7 @@ void setup() {
   uart_init();
   uart_sendDeviceId();             // ESP32 #2 logs under the same machine ID
   change_init();                   // change servos on this board now
+  coinlevel_init();                // IR sensors on the P1 / P5 / P10 coin tubes
   coin_inhibit(true);              // coins off until a tray is selected
 
   lcd_showDeviceInfo();            // ID + pairing code, so the owner can add it in the app
@@ -89,18 +95,31 @@ void setup() {
 }
 
 void loop() {
+  coinlevel_tick(currentState == IDLE);   // coin tubes: read always, upload only while idle
   switch (currentState) {
 
     // ── Waiting for a tray button ──────────
     case IDLE: {
       firebase_tick();             // price sync / expiry check, only while idle
+      if (millis() - lastIdSend > ID_RESEND_MS) {   // ESP32 #2 may have restarted
+        lastIdSend = millis();
+        uart_sendDeviceId();
+      }
       int pressed = buttons_read();
       if (pressed != -1) {
         selectedTray = pressed;
         coinBalance  = 0;
         changeAmount = 0;
         lcd_showCheckingPrice(selectedTray);
-        firebase_refreshPrice(selectedTray);   // latest price from the app; locked until this order ends
+        firebase_refreshPrice(selectedTray);   // latest price (and stock) from Firebase; locked until this order ends
+        if (trayIsEmpty(selectedTray)) {        // sensor says 0 items: don't take coins
+          Serial.println("Tray " + String(selectedTray + 1) + " is empty (sensor).");
+          lcd_showEmpty(selectedTray);
+          delay(2500);
+          selectedTray = -1;
+          lcd_showWelcome();
+          break;
+        }
         Serial.println("Tray selected: " + String(selectedTray + 1) +
                        " | Price: P" + String(getTrayPrice(selectedTray)));
         lcd_showSelected(selectedTray);
@@ -117,9 +136,16 @@ void loop() {
       // Switching trays keeps the coins already inserted
       int pressed = buttons_read();
       if (pressed != -1 && pressed != selectedTray) {
+        lcd_showCheckingPrice(pressed);
+        firebase_refreshPrice(pressed);        // coins inserted meanwhile are still counted
+        if (trayIsEmpty(pressed)) {            // keep the tray that was already chosen
+          lcd_showEmpty(pressed);
+          delay(2000);
+          lcd_showSelected(selectedTray);
+          lcd_showBalance();
+          break;
+        }
         selectedTray = pressed;
-        lcd_showCheckingPrice(selectedTray);
-        firebase_refreshPrice(selectedTray);   // coins inserted meanwhile are still counted
         Serial.println("Tray changed to: " + String(selectedTray + 1) +
                        " | Price: P" + String(getTrayPrice(selectedTray)));
         lcd_showSelected(selectedTray);
@@ -185,6 +211,12 @@ void loop() {
 }
 
 // ── Helpers ───────────────────────────────
+
+// Only sensor-measured trays are blocked at 0; counted trays keep selling
+// (their count can be off if a refill wasn't entered in the app)
+bool trayIsEmpty(int tray) {
+  return tray >= 0 && tray < TRAY_COUNT && traySensor[tray] && trayStock[tray] <= 0;
+}
 
 int getTrayPrice(int tray) {
   if (tray < 0 || tray >= TRAY_COUNT) return 0;

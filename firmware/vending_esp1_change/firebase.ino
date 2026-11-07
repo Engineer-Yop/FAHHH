@@ -7,8 +7,10 @@
 //           orders/order_N, orders/summary
 //           totals/daily/YYYY-MM-DD, totals/weekly/YYYY-Www
 //           trays/tray_N/stock, trays/tray_N/capacity, notifications/expiry_tray_N
+//           coins {p1, p5, p10: "ok"|"empty"}  (from the IR sensors, coinlevel.ino)
 //  Reads:   trays            all trays (price, expiry, stock) in one request, every minute while idle
-//           trays/tray_N/price    again each time that tray's button is pressed
+//           trays/tray_N          again each time that tray's button is pressed (price, stock, stock_source)
+//  Stock: trays with "stock_source":"sensor" are measured by ESP32 #2 (ToF), not counted here.
 //
 //  Price and expiry are set from the Android app. A new price is used on the
 //  next button press — no need to upload a new program.
@@ -72,6 +74,11 @@ void firebase_onConnected() {
   lastExpiryCheckDate = getFormattedDate();
   lastTraySync = millis();
   cloudReady = true;
+}
+
+// WiFi up and the first sync done (used by coinlevel.ino)
+bool firebase_isOnline() {
+  return cloudReady && WiFi.status() == WL_CONNECTED;
 }
 
 // Call from loop() while IDLE
@@ -283,6 +290,7 @@ void firebase_syncTrays() {
 
     int stock = jsonInt(obj, "stock", -1);
     if (stock >= 0) trayStock[i] = stock;
+    traySensor[i] = (jsonString(obj, "stock_source") == "sensor");
 
     String expiry = jsonString(obj, "expiry");
     if (expiry != trayExpiry[i]) {
@@ -294,23 +302,25 @@ void firebase_syncTrays() {
   if (expiryChanged) firebase_checkExpiry();
 }
 
-// Called when a tray button is pressed: use the price the app has right now.
-// If Firebase doesn't answer in time, the last known price is used.
+// Called when a tray button is pressed: use the price the app has right now,
+// and the latest stock (measured by ESP32 #2 for sensor trays).
+// If Firebase doesn't answer in time, the last known values are used.
 void firebase_refreshPrice(int tray) {
   if (tray < 0 || tray >= TRAY_COUNT) return;
   String body;
-  int code = firebase_send("GET", "/trays/tray_" + String(tray + 1) + "/price", "", "",
-                           body, PRICE_CHECK_MS);
-  if (code != 200) {
+  int code = firebase_send("GET", "/trays/tray_" + String(tray + 1), "", "", body, PRICE_CHECK_MS);
+  if (code != 200 || body == "null") {
     Serial.println("[Price] Tray " + String(tray + 1) + ": no answer, using P" + String(trayPrices[tray]));
     return;
   }
-  body.replace("\"", "");
-  int price = body.toInt();            // "null" → 0 → ignored
+  int price = jsonInt(body, "price", -1);
   if (price > 0 && price != trayPrices[tray]) {
     Serial.println("[Price] Tray " + String(tray + 1) + ": P" + String(trayPrices[tray]) + " -> P" + String(price));
     trayPrices[tray] = price;
   }
+  int stock = jsonInt(body, "stock", -1);
+  if (stock >= 0) trayStock[tray] = stock;
+  traySensor[tray] = (jsonString(body, "stock_source") == "sensor");
 }
 
 // ── Expiry check ──────────────────────────
@@ -364,7 +374,7 @@ void firebase_logOrder(int tray, int amountPaid, int change) {
   int price = trayPrices[tray];        // same price the customer paid against
   orderCount++;
   bool takeOne = trayStock[tray] > 0;
-  if (takeOne) trayStock[tray]--;
+  if (takeOne) trayStock[tray]--;        // local copy; sensor trays get the real value from ESP32 #2
 
   // 1. The order itself
   firebase_put("/orders/order_" + String(orderCount),
@@ -400,7 +410,8 @@ void firebase_logOrder(int tray, int amountPaid, int change) {
 
   // 3. Stock only — price and expiry belong to the app, so they are not overwritten.
   //    Firebase subtracts 1 itself, so a refill done in the app at the same time isn't lost.
-  if (takeOne) {
+  //    Sensor trays are skipped: ESP32 #2 measures them and writes the stock.
+  if (takeOne && !traySensor[tray]) {
     firebase_patch("/trays/tray_" + String(tray + 1),
       "{\"stock\":" + fbIncrement(-1) + ",\"capacity\":" + String(TRAY_CAPACITY) + "}", resp);
     int s = jsonInt(resp, "stock", -1);

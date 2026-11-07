@@ -21,7 +21,7 @@ import java.util.Set;
 /**
  * Live alerts: while the app is running, listens to the trays of every machine
  * paired to the signed-in account, so a sale that empties a tray (or a new
- * expiry date) shows a notification within seconds.
+ * expiry date, or an empty change tube) shows a notification within seconds.
  * When the app is closed, InventoryWorker checks every 15 minutes instead.
  */
 public final class TrayAlertMonitor {
@@ -34,6 +34,8 @@ public final class TrayAlertMonitor {
     private static ValueEventListener myDevicesListener;
     /** machine ID → its trays listener */
     private static final Map<String, ValueEventListener> trayListeners = new HashMap<>();
+    /** machine ID → its change-coins listener (IR sensors on the P1/P5/P10 tubes) */
+    private static final Map<String, ValueEventListener> coinListeners = new HashMap<>();
     /** machine ID → display name */
     private static final Map<String, String> names = new HashMap<>();
 
@@ -72,6 +74,10 @@ public final class TrayAlertMonitor {
             traysRef(e.getKey()).removeEventListener(e.getValue());
         }
         trayListeners.clear();
+        for (Map.Entry<String, ValueEventListener> e : coinListeners.entrySet()) {
+            coinsRef(e.getKey()).removeEventListener(e.getValue());
+        }
+        coinListeners.clear();
         names.clear();
         myDevicesRef = null;
         myDevicesListener = null;
@@ -89,6 +95,8 @@ public final class TrayAlertMonitor {
         for (String id : new HashSet<>(trayListeners.keySet())) {
             if (!current.contains(id)) {               // machine removed from this account
                 traysRef(id).removeEventListener(trayListeners.remove(id));
+                ValueEventListener c = coinListeners.remove(id);
+                if (c != null) coinsRef(id).removeEventListener(c);
                 names.remove(id);
             }
         }
@@ -109,6 +117,25 @@ public final class TrayAlertMonitor {
         };
         trayListeners.put(id, l);
         traysRef(id).addValueEventListener(l);
+
+        ValueEventListener c = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String name = names.containsKey(id) ? names.get(id) : TrayAlerts.machineName(id, null);
+                CoinAlerts.check(app, id, name, snapshot);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.w(TAG, "Coins of " + id + " stopped: " + error.getMessage());
+            }
+        };
+        coinListeners.put(id, c);
+        coinsRef(id).addValueEventListener(c);
+    }
+
+    private static DatabaseReference coinsRef(String id) {
+        return DeviceSession.deviceRef(id).child("coins");
     }
 
     private static DatabaseReference traysRef(String id) {

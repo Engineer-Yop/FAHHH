@@ -8,17 +8,18 @@
 //    change.ino        greedy change: P10 → P5 (A/B) → P1
 //    firebase.ino      WiFi + vend/change log
 //    servo.ino         PCA9685 servo control
-//    tof.ino           PCA9548A MUX + 8x VL53L0X (off by default)
+//    stock.ino         tray stock from the ToF sensors -> Firebase
+//    tof.ino           PCA9548A MUX + 8x VL53L0X (calibrated with the tof_test sketch)
 //    uart.ino          UART2 link to ESP32 #1
 //
 //  Libraries: Adafruit PWM Servo Driver (+ Adafruit BusIO)
-//             VL53L0X by Pololu (only when USE_TOF is 1)
+//             VL53L0X by Pololu (only when USE_TOF is 1), Preferences (built in)
 // ─────────────────────────────────────────
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 
 // ── Feature switches ─────────────────────
-#define USE_TOF        0     // 1 = start the 8 ToF sensors (needs MUX + VL53L0X library)
+#define USE_TOF        1     // 1 = stock measured by the 8 ToF sensors (needs MUX + VL53L0X library)
 #define USE_FIREBASE   1     // 1 = log vends/change to Firebase (set WiFi in firebase.ino)
 
 // ── I2C addresses ────────────────────────
@@ -48,6 +49,22 @@ Adafruit_PWMServoDriver pca9685 = Adafruit_PWMServoDriver(PCA9685_ADDR);
 #define CH_10PESO      14    // MG90S
 #define CH_5PESO_B     15    // MG90S
 
+// ── Trays + ToF stock ─────────────────────
+#define TRAY_CAPACITY      7      // items in a full tray (same as ESP32 #1)
+#define TOF_SAMPLES        5      // readings per background measurement (median used)
+#define TOF_STABLE_COUNT   3      // same count this many times in a row before it is accepted
+#define TOF_SCAN_MS        300    // one tray measured every 300 ms -> all 8 about every 2.4 s
+#define TOF_AFTER_VEND_MS  600    // wait for the item to fall before measuring again
+#define TOF_OUT_OF_RANGE   8000   // library gives ~8190 when nothing is in range
+#define TOF_MIN_SPAN_MM    20     // EMPTY and FULL must differ by at least this much
+#define STOCK_REPUBLISH_MS 300000 // re-send sensor stock every 5 min (overrides manual edits)
+
+// Calibration backup (mm). The tof_test sketch saves the real values in flash and
+// those are used first; paste its "c" output here only if the flash gets erased.
+// 0 = not calibrated -> that tray is counted by ESP32 #1 instead.
+const int TOF_EMPTY_MM[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+const int TOF_FULL_MM[8]  = {0, 0, 0, 0, 0, 0, 0, 0};
+
 // ── Machine ID (sent by ESP32 #1 as "ID:SV-XXXXXX") ──
 String deviceId = "";            // Firebase logs go under /devices/<deviceId>/vend_logs
 bool   deviceIdChanged = false;
@@ -76,8 +93,9 @@ void setup() {
 #if USE_TOF
   tof_init();
 #else
-  Serial.println("[ToF] Disabled (USE_TOF 0) — servo spin = success");
+  Serial.println("[ToF] Disabled (USE_TOF 0) — all trays counted by ESP32 #1");
 #endif
+  stock_init();
 
 #if USE_FIREBASE
   firebase_init();
@@ -93,7 +111,8 @@ void loop() {
   if (cmd == CMD_VEND) {
     Serial.println("Vend command for tray " + String(value + 1));
     bool ok = vendTray(value);
-    uart_sendResult(value, ok);          // reply first, log after
+    uart_sendResult(value, ok);          // reply first, measure + log after
+    stock_afterVend(value, ok);
 #if USE_FIREBASE
     firebase_logVend(value, ok);
 #endif
@@ -107,6 +126,8 @@ void loop() {
 #endif
   }
 
+  stock_tick();                          // background tray measuring + Firebase update
+
 #if USE_FIREBASE
   firebase_tick();
 #endif
@@ -114,15 +135,6 @@ void loop() {
 
 // ── Vend one tray ─────────────────────────
 bool vendTray(int tray) {
-#if USE_TOF
-  int before = tof_read(tray);
   servo_vend(tray);
-  delay(300);
-  int after = tof_read(tray);
-  Serial.println("[ToF] Tray " + String(tray + 1) + " before " + String(before) +
-                 " mm, after " + String(after) + " mm");
-#else
-  servo_vend(tray);
-#endif
-  return true;   // no item-drop check yet: a finished spin counts as success
+  return true;   // a finished spin counts as success; the sensor then updates the stock
 }

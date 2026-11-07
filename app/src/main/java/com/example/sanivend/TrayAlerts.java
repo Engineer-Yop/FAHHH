@@ -87,6 +87,8 @@ public final class TrayAlerts {
                 "Expiry alerts", NotificationManager.IMPORTANCE_HIGH);
         expiry.setDescription("Products expiring within 7 days or already expired");
         nm.createNotificationChannel(expiry);
+
+        CoinAlerts.createChannel(context);
     }
 
     /** Background check every 15 minutes (the shortest Android allows), even when the app is closed. */
@@ -110,6 +112,8 @@ public final class TrayAlerts {
                         final String name = machineName(id, d.child("name").getValue());
                         DeviceSession.deviceRef(id).child("trays").get()
                                 .addOnSuccessListener(trays -> check(app, id, name, trays));
+                        DeviceSession.deviceRef(id).child("coins").get()
+                                .addOnSuccessListener(coins -> CoinAlerts.check(app, id, name, coins));
                     }
                 })
                 .addOnFailureListener(e -> Log.w(TAG, "Couldn't read machines: " + e.getMessage()));
