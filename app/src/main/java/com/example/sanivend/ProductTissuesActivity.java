@@ -29,15 +29,20 @@ public class ProductTissuesActivity extends BaseActivity {
 
         trayEditor = new TrayEditor(this);
 
-        // Femme = Tray 5
-        trayEditor.bind(5, "FEMME",
+        // Tray 5
+        trayEditor.bind(5, R.drawable.femme,
+                findViewById(R.id.img_femme), findViewById(R.id.tv_name_femme),
                 findViewById(R.id.tv_price_femme), findViewById(R.id.tv_expiry_femme),
-                findViewById(R.id.btn_edit_price_femme), findViewById(R.id.btn_edit_expiry_femme));
+                findViewById(R.id.btn_edit_price_femme), findViewById(R.id.btn_edit_expiry_femme),
+                findViewById(R.id.btn_replace_femme));
 
-        // Blest = Tray 6
-        trayEditor.bind(6, "BLEST",
+        // Tray 6
+        trayEditor.bind(6, R.drawable.blest,
+                findViewById(R.id.img_blest), findViewById(R.id.tv_name_blest),
                 findViewById(R.id.tv_price_blest), findViewById(R.id.tv_expiry_blest),
-                findViewById(R.id.btn_edit_price_blest), findViewById(R.id.btn_edit_expiry_blest));
+                findViewById(R.id.btn_edit_price_blest), findViewById(R.id.btn_edit_expiry_blest),
+                findViewById(R.id.btn_replace_blest));
+
     }
 
     @Override

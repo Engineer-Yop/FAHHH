@@ -5,6 +5,7 @@ import com.google.firebase.database.IgnoreExtraProperties
 @IgnoreExtraProperties
 data class Order(
     val amount_paid: Int = 0,
+    val product: String = "",        // product name at the time of the sale (firmware 2.2+)
     val change: Int = 0,
     val date: String = "",
     val datetime: String = "",
@@ -18,7 +19,9 @@ data class SalesTransaction(
     val itemsSold: String = "",
     val date: String = "",
     val time: String = "",
-    val amount: Double = 0.0 // Added to support older structure if needed
+    val amount: Double = 0.0, // Added to support older structure if needed
+    val header: String? = null, // set for a "Week 1 · Nov 1–7" heading row instead of an order
+    val sortKey: String = ""    // "yyyy-MM-dd HH:mm:ss", newest first within a week
 )
 
 @IgnoreExtraProperties

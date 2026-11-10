@@ -65,7 +65,7 @@ public class SignUpActivity extends BaseActivity {
         signupButton.setText(busy ? "Creating account..." : "Sign up");
     }
 
-    /** Creates the account, sends the verification email, then returns to Login. */
+    /** Creates the account, then opens the screen that emails and checks the 6-digit code. */
     private void performSignUp(String email, String password) {
         setBusy(true);
         mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(this, task -> {
@@ -79,20 +79,11 @@ public class SignUpActivity extends BaseActivity {
                 setBusy(false);
                 return;
             }
-            user.sendEmailVerification().addOnCompleteListener(verifyTask -> {
-                mAuth.signOut();
-                setBusy(false);
-                new AlertDialog.Builder(this)
-                        .setTitle(verifyTask.isSuccessful() ? "Check your email" : "Account created")
-                        .setMessage(verifyTask.isSuccessful()
-                                ? "We sent a verification link to " + email + ". Open it (check Spam too), "
-                                  + "then come back and log in."
-                                : "Your account was created, but the verification email couldn't be sent ("
-                                  + AuthErrors.message(verifyTask.getException()) + "). Log in to get a new link.")
-                        .setPositiveButton("Go to login", (d, w) -> finish())
-                        .setCancelable(false)
-                        .show();
-            });
+            AccountVerification.markNew(user);
+            setBusy(false);
+            startActivity(new Intent(this, VerificationActivity.class)
+                    .putExtra(VerificationActivity.EXTRA_SEND_NOW, true));
+            finish();
         });
     }
 }

@@ -24,10 +24,11 @@ import com.google.firebase.database.ValueEventListener;
 
 /**
  * Login (the app's start screen).
- *  - Email + password; only verified emails can sign in.
- *  - If the email isn't verified yet, offers to resend the verification email.
+ *  - Email + password; only activated accounts get in.
+ *  - Not activated yet (no 6-digit code entered) → the code screen, with a fresh code.
  *  - "Forgot password?" sends a reset link.
- *  - Stays signed in: next time the app opens straight to My Machines.
+ *  - Stays signed in: next time the app opens straight to Sanivend Machines.
+ *  Opened by the Welcome page, which the app shows first every time it starts.
  */
 public class MainActivity extends BaseActivity {
 
@@ -43,13 +44,16 @@ public class MainActivity extends BaseActivity {
         mAuth = FirebaseAuth.getInstance();
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
-        // Already signed in with a verified email → skip the login screen
-        FirebaseUser current = mAuth.getCurrentUser();
-        if (current != null && current.isEmailVerified()) {
-            checkUserProfile(current.getUid());
+        // Already signed in → straight on (or to the code screen if not activated yet)
+        final FirebaseUser current = mAuth.getCurrentUser();
+        if (current != null) {
+            AccountVerification.check(this, current, verified -> {
+                if (isFinishing()) return;
+                if (verified) checkUserProfile(current.getUid());
+                else openVerification(false);
+            });
             return;
         }
-        if (current != null) mAuth.signOut();          // signed in but never verified
 
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
@@ -100,32 +104,22 @@ public class MainActivity extends BaseActivity {
                 setBusy(false);
                 return;
             }
-            if (user.isEmailVerified()) {
-                checkUserProfile(user.getUid());
-            } else {
-                setBusy(false);
-                showNotVerified(user);
-            }
+            AccountVerification.check(this, user, verified -> {
+                if (isFinishing()) return;
+                if (verified) {
+                    checkUserProfile(user.getUid());
+                } else {
+                    setBusy(false);
+                    openVerification(true);              // email a fresh 6-digit code
+                }
+            });
         });
     }
 
-    /** Unverified email: explain, offer to resend, and sign out again. */
-    private void showNotVerified(final FirebaseUser user) {
-        new AlertDialog.Builder(this)
-                .setTitle("Verify your email first")
-                .setMessage("We sent a verification link to " + user.getEmail()
-                        + ". Open it (check Spam too), then log in again.")
-                .setPositiveButton("Resend email", (d, w) -> user.sendEmailVerification()
-                        .addOnCompleteListener(t -> {
-                            Toast.makeText(this, t.isSuccessful()
-                                            ? "Verification email sent to " + user.getEmail()
-                                            : AuthErrors.message(t.getException()),
-                                    Toast.LENGTH_LONG).show();
-                            mAuth.signOut();
-                        }))
-                .setNegativeButton("OK", (d, w) -> mAuth.signOut())
-                .setOnCancelListener(d -> mAuth.signOut())
-                .show();
+    private void openVerification(boolean sendNow) {
+        startActivity(new Intent(this, VerificationActivity.class)
+                .putExtra(VerificationActivity.EXTRA_SEND_NOW, sendNow));
+        finish();
     }
 
     private void showForgotPassword() {
@@ -156,10 +150,10 @@ public class MainActivity extends BaseActivity {
                 .show();
     }
 
-    /** First login → Create Profile (username). Otherwise → My Machines. */
+    /** First login → Create Profile (username). Otherwise → Sanivend Machines. */
     private void checkUserProfile(String uid) {
         final boolean[] done = {false};
-        // If the database doesn't answer in 4 s (offline), go on to My Machines anyway
+        // If the database doesn't answer in 4 s (offline), go on to Sanivend Machines anyway
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> go(done, true), 4000);
         mDatabase.child("users").child(uid).child("username")
                 .addListenerForSingleValueEvent(new ValueEventListener() {

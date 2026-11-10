@@ -31,7 +31,7 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Stock and expiry notifications for the 8 trays.
+ * Stock, refill and expiry notifications for the 8 trays.
  *
  * For every machine paired to the signed-in account, reads
  * /devices/{id}/trays/tray_N/stock (written by the ESP32 after each sale) and
@@ -41,6 +41,8 @@ import java.util.concurrent.TimeUnit;
  * notification; the machine's name is shown in the notification header.
  * A notification is only sent again when something changes (one fewer item,
  * one fewer day left, a new date), and it is cleared when the tray is back to OK.
+ * When a tray's stock climbs back up to its capacity, a "Refilled" confirmation is sent once.
+ * Product names come from /trays/tray_N/product, so a product changed in the app is named correctly.
  *
  * Runs from two places:
  *   - TrayAlertMonitor: live, the moment Firebase changes, while the app is running
@@ -52,22 +54,15 @@ public final class TrayAlerts {
 
     public static final String CHANNEL_STOCK  = "stock_alerts";
     public static final String CHANNEL_EXPIRY = "expiry_alerts";
+    public static final String CHANNEL_REFILL = "refill_alerts";
 
     private static final String PREFS = "tray_alerts";
 
-    /** Tray number → product name, same order as the app's Inventory screen. */
-    static final String[] PRODUCTS = {
-            "",
-            "Sisters Sanitary Napkins",   // 1
-            "Charmee Sanitary Napkins",   // 2
-            "Kleenfant Wet Wipes",        // 3
-            "Giggles Wet Wipes",          // 4
-            "Femme Facial Tissues",       // 5
-            "Blest Facial Tissues",       // 6
-            "Hygienix Hand Sanitizer",    // 7
-            "Alcosafe Hand Sanitizer"     // 8
-    };
-    static final int TRAY_COUNT = 8;
+    private static final String LAST_STOCK = "tray_last_stock";
+    /** machine ID → tray → current product name (filled by check(), used by OrderAlerts). */
+    private static final java.util.Map<String, String[]> names = new java.util.HashMap<>();
+
+    static final int TRAY_COUNT = ProductCatalog.TRAY_COUNT;
     static final int DEFAULT_CAPACITY = 7;
 
     private TrayAlerts() {}
@@ -88,6 +83,12 @@ public final class TrayAlerts {
         expiry.setDescription("Products expiring within 7 days or already expired");
         nm.createNotificationChannel(expiry);
 
+        NotificationChannel refill = new NotificationChannel(CHANNEL_REFILL,
+                "Refill confirmations", NotificationManager.IMPORTANCE_DEFAULT);
+        refill.setDescription("A tray was restocked back to full");
+        nm.createNotificationChannel(refill);
+
+        OrderAlerts.createChannel(context);
         CoinAlerts.createChannel(context);
     }
 
@@ -112,6 +113,8 @@ public final class TrayAlerts {
                         final String name = machineName(id, d.child("name").getValue());
                         DeviceSession.deviceRef(id).child("trays").get()
                                 .addOnSuccessListener(trays -> check(app, id, name, trays));
+                        DeviceSession.deviceRef(id).child("orders").get()
+                                .addOnSuccessListener(orders -> OrderAlerts.checkAll(app, id, name, orders));
                         DeviceSession.deviceRef(id).child("coins").get()
                                 .addOnSuccessListener(coins -> CoinAlerts.check(app, id, name, coins));
                     }
@@ -125,15 +128,26 @@ public final class TrayAlerts {
         return n.isEmpty() ? "SaniVend " + deviceId : n;
     }
 
+    /** Current product name of a machine's tray (the factory name until check() has run). */
+    public static synchronized String productName(String deviceId, int tray) {
+        String[] n = names.get(deviceId);
+        if (n != null && tray >= 1 && tray <= TRAY_COUNT && n[tray] != null) return n[tray];
+        return ProductCatalog.defaultName(tray);
+    }
+
     /** Checks every tray in one machine's /trays snapshot and sends or clears notifications. */
     public static synchronized void check(Context context, String deviceId, String deviceName,
                                           DataSnapshot trays) {
         createChannels(context);
         String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
+        String[] trayNames = new String[TRAY_COUNT + 1];
+        names.put(deviceId, trayNames);
+        SharedPreferences last = context.getSharedPreferences(LAST_STOCK, Context.MODE_PRIVATE);
 
         for (int tray = 1; tray <= TRAY_COUNT; tray++) {
             DataSnapshot t = trays.child("tray_" + tray);
-            String product = PRODUCTS[tray];
+            String product = ProductCatalog.name(tray, t.child("product").getValue());
+            trayNames[tray] = product;
 
             Object stockValue = t.child("stock").getValue();
             Object capValue = t.child("capacity").getValue();
@@ -141,6 +155,13 @@ public final class TrayAlerts {
             Integer stock = stockValue != null ? TrayEditor.toInt(stockValue) : null;
             apply(context, deviceId, deviceName,
                     AlertRules.stock(tray, product, stock, capacity), AlertRules.Kind.STOCK, tray);
+
+            // Refill: compare with the stock seen last time (nothing is sent the first time)
+            String lastKey = deviceId + "|" + tray;
+            Integer previous = last.contains(lastKey) ? last.getInt(lastKey, 0) : null;
+            AlertRules.Alert refill = AlertRules.refill(tray, product, previous, stock, capacity);
+            if (refill != null) send(context, deviceId, deviceName, refill);
+            if (stock != null) last.edit().putInt(lastKey, stock).apply();
 
             Object expiryValue = t.child("expiry").getValue();
             String expiry = expiryValue != null ? String.valueOf(expiryValue) : null;
@@ -177,15 +198,17 @@ public final class TrayAlerts {
             Log.w(TAG, "Notification permission not granted — skipped: " + alert.title);
             return false;
         }
-        boolean isStock = alert.kind == AlertRules.Kind.STOCK;
-        NotificationCompat.Builder b = new NotificationCompat.Builder(context,
-                isStock ? CHANNEL_STOCK : CHANNEL_EXPIRY)
-                .setSmallIcon(android.R.drawable.stat_sys_warning)
+        String channel = alert.kind == AlertRules.Kind.STOCK ? CHANNEL_STOCK
+                : alert.kind == AlertRules.Kind.REFILL ? CHANNEL_REFILL : CHANNEL_EXPIRY;
+        NotificationCompat.Builder b = new NotificationCompat.Builder(context, channel)
+                .setSmallIcon(alert.kind == AlertRules.Kind.REFILL
+                        ? android.R.drawable.stat_sys_download_done : android.R.drawable.stat_sys_warning)
                 .setSubText(deviceName)
                 .setContentTitle(alert.title)
                 .setContentText(alert.message)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(alert.message))
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setPriority(alert.kind == AlertRules.Kind.REFILL
+                        ? NotificationCompat.PRIORITY_DEFAULT : NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
                 .setContentIntent(openScreen(context, deviceId, deviceName, alert))
                 .setAutoCancel(true);
@@ -198,7 +221,7 @@ public final class TrayAlerts {
     private static PendingIntent openScreen(Context context, String deviceId, String deviceName,
                                             AlertRules.Alert alert) {
         Class<?> target;
-        if (alert.kind == AlertRules.Kind.STOCK) {
+        if (alert.kind == AlertRules.Kind.STOCK || alert.kind == AlertRules.Kind.REFILL) {
             target = InventoryTrackingActivity.class;
         } else if (alert.tray <= 2) {
             target = ProductNapkinsActivity.class;
@@ -222,10 +245,12 @@ public final class TrayAlerts {
 
     /**
      * One ID per machine + kind + tray, so alerts never replace each other:
-     * 20 numbers per machine (stock 1–8, expiry 11–18).
+     * 30 numbers per machine (stock 1–8, expiry 11–18, refill 21–28).
+     * Coin alerts use 30,000,000+ and order alerts 40,000,000+, so the ranges never meet.
      */
     static int notificationId(String deviceId, AlertRules.Kind kind, int tray) {
         int slot = (deviceId.hashCode() & 0x7fffffff) % 100_000;
-        return 1_000_000 + slot * 20 + (kind == AlertRules.Kind.STOCK ? 0 : 10) + tray;
+        int offset = kind == AlertRules.Kind.STOCK ? 0 : kind == AlertRules.Kind.EXPIRY ? 10 : 20;
+        return 1_000_000 + slot * 30 + offset + tray;
     }
 }

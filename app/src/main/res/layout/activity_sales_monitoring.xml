@@ -24,13 +24,26 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <TextView
+        android:id="@+id/tv_month"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:text="This month, by week"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/sales_monitoring_title" />
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="20dp"
         android:scrollbars="none"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/sales_monitoring_title">
+        app:layout_constraintTop_toBottomOf="@id/tv_month">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -127,7 +140,7 @@
                     tools:listitem="@layout/item_sales_row" />
             </LinearLayout>
 
-            <!-- Category: Hand Sanitizers -->
+            <!-- Category: Sanitizers -->
             <Button
                 android:id="@+id/btn_sales_sanitizers"
                 android:layout_width="match_parent"

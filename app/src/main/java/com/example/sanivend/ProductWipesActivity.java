@@ -29,15 +29,20 @@ public class ProductWipesActivity extends BaseActivity {
 
         trayEditor = new TrayEditor(this);
 
-        // Kleenfant = Tray 3
-        trayEditor.bind(3, "KLEENFANT",
+        // Tray 3
+        trayEditor.bind(3, R.drawable.kleenfant,
+                findViewById(R.id.img_kleenfant), findViewById(R.id.tv_name_kleenfant),
                 findViewById(R.id.tv_price_kleenfant), findViewById(R.id.tv_expiry_kleenfant),
-                findViewById(R.id.btn_edit_price_kleenfant), findViewById(R.id.btn_edit_expiry_kleenfant));
+                findViewById(R.id.btn_edit_price_kleenfant), findViewById(R.id.btn_edit_expiry_kleenfant),
+                findViewById(R.id.btn_replace_kleenfant));
 
-        // Giggles = Tray 4
-        trayEditor.bind(4, "GIGGLES",
+        // Tray 4
+        trayEditor.bind(4, R.drawable.giggles,
+                findViewById(R.id.img_giggles), findViewById(R.id.tv_name_giggles),
                 findViewById(R.id.tv_price_giggles), findViewById(R.id.tv_expiry_giggles),
-                findViewById(R.id.btn_edit_price_giggles), findViewById(R.id.btn_edit_expiry_giggles));
+                findViewById(R.id.btn_edit_price_giggles), findViewById(R.id.btn_edit_expiry_giggles),
+                findViewById(R.id.btn_replace_giggles));
+
     }
 
     @Override

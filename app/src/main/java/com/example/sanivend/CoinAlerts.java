@@ -111,9 +111,9 @@ public final class CoinAlerts {
         return true;
     }
 
-    /** Separate range from TrayAlerts (which uses 1,000,000+): 3 numbers per machine. */
+    /** Separate range from TrayAlerts (1,000,000+) and OrderAlerts (40,000,000+): 3 numbers per machine. */
     static int notificationId(String deviceId, int i) {
         int slot = (deviceId.hashCode() & 0x7fffffff) % 100_000;
-        return 3_000_000 + slot * 3 + i;
+        return 30_000_000 + slot * 3 + i;
     }
 }

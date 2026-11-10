@@ -29,15 +29,20 @@ public class ProductSanitizersActivity extends BaseActivity {
 
         trayEditor = new TrayEditor(this);
 
-        // Hygienix = Tray 7
-        trayEditor.bind(7, "HYGIENIX",
+        // Tray 7
+        trayEditor.bind(7, R.drawable.greencross,
+                findViewById(R.id.img_hygienix), findViewById(R.id.tv_name_hygienix),
                 findViewById(R.id.tv_price_hygienix), findViewById(R.id.tv_expiry_hygienix),
-                findViewById(R.id.btn_edit_price_hygienix), findViewById(R.id.btn_edit_expiry_hygienix));
+                findViewById(R.id.btn_edit_price_hygienix), findViewById(R.id.btn_edit_expiry_hygienix),
+                findViewById(R.id.btn_replace_hygienix));
 
-        // Alcosafe = Tray 8
-        trayEditor.bind(8, "ALCOSAFE",
+        // Tray 8
+        trayEditor.bind(8, R.drawable.alcosafe,
+                findViewById(R.id.img_alcosafe), findViewById(R.id.tv_name_alcosafe),
                 findViewById(R.id.tv_price_alcosafe), findViewById(R.id.tv_expiry_alcosafe),
-                findViewById(R.id.btn_edit_price_alcosafe), findViewById(R.id.btn_edit_expiry_alcosafe));
+                findViewById(R.id.btn_edit_price_alcosafe), findViewById(R.id.btn_edit_expiry_alcosafe),
+                findViewById(R.id.btn_replace_alcosafe));
+
     }
 
     @Override

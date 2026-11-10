@@ -5,91 +5,103 @@ import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.database.*
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * Sales Monitoring: this month's orders of the open machine, per category,
+ * grouped by week (Week 1 = days 1–7 … Week 5 = 29–31), newest week first.
+ *
+ * On the 1st of a new month the lists start empty again. Nothing is deleted:
+ * every order stays in /devices/{id}/orders, so Sales Performance (the graph)
+ * still counts them.
+ */
 class SalesMonitoringActivity : BaseActivity() {
 
     private var ordersRef: DatabaseReference? = null
     private var ordersListener: ValueEventListener? = null
+    private var traysRef: DatabaseReference? = null
+    private var traysListener: ValueEventListener? = null
 
-    private lateinit var rvNapkins: RecyclerView
-    private lateinit var rvWipes: RecyclerView
-    private lateinit var rvTissues: RecyclerView
-    private lateinit var rvSanitizers: RecyclerView
+    private lateinit var monthView: TextView
+    private lateinit var adapters: Map<String, SalesTransactionAdapter>
+    private lateinit var containers: List<LinearLayout>
 
-    private lateinit var containerNapkins: LinearLayout
-    private lateinit var containerWipes: LinearLayout
-    private lateinit var containerTissues: LinearLayout
-    private lateinit var containerSanitizers: LinearLayout
-
-    private lateinit var adapterNapkins: SalesTransactionAdapter
-    private lateinit var adapterWipes: SalesTransactionAdapter
-    private lateinit var adapterTissues: SalesTransactionAdapter
-    private lateinit var adapterSanitizers: SalesTransactionAdapter
-
-    // Mapping of tray numbers to product names/categories
-    private val trayMapping = mapOf(
-        1 to "Sisters",
-        2 to "Charmee",
-        3 to "Kleenfant",
-        4 to "Giggles",
-        5 to "Femme",
-        6 to "Blest",
-        7 to "Hygienix",
-        8 to "Alcosafe"
-    )
+    /** Latest data, so a change to either orders or product names redraws the lists. */
+    private var lastOrders: DataSnapshot? = null
+    private val trayNames = mutableMapOf<Int, String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (!DeviceSession.requireDevice(this)) return
         setContentView(R.layout.activity_sales_monitoring)
 
-        setupRecyclerViews()
+        monthView = findViewById(R.id.tv_month)
+        setupLists()
         setupButtons()
-        
+        observeTrayNames()
         observeOrders()
     }
 
-    private fun setupRecyclerViews() {
-        rvNapkins = findViewById(R.id.rvSanitaryNapkins)
-        rvWipes = findViewById(R.id.rvWetWipes)
-        rvTissues = findViewById(R.id.rvFacialTissues)
-        rvSanitizers = findViewById(R.id.rvHandSanitizers)
-
-        containerNapkins = findViewById(R.id.containerNapkins)
-        containerWipes = findViewById(R.id.containerWipes)
-        containerTissues = findViewById(R.id.containerTissues)
-        containerSanitizers = findViewById(R.id.containerSanitizers)
-
-        adapterNapkins = SalesTransactionAdapter(emptyList())
-        adapterWipes = SalesTransactionAdapter(emptyList())
-        adapterTissues = SalesTransactionAdapter(emptyList())
-        adapterSanitizers = SalesTransactionAdapter(emptyList())
-
-        val setup = { rv: RecyclerView, adapter: SalesTransactionAdapter ->
+    private fun setupLists() {
+        val napkins = SalesTransactionAdapter(emptyList())
+        val wipes = SalesTransactionAdapter(emptyList())
+        val tissues = SalesTransactionAdapter(emptyList())
+        val sanitizers = SalesTransactionAdapter(emptyList())
+        adapters = mapOf(
+            ProductCatalog.NAPKINS to napkins,
+            ProductCatalog.WIPES to wipes,
+            ProductCatalog.TISSUES to tissues,
+            ProductCatalog.SANITIZERS to sanitizers
+        )
+        val setup = { id: Int, adapter: SalesTransactionAdapter ->
+            val rv = findViewById<RecyclerView>(id)
             rv.layoutManager = LinearLayoutManager(this)
             rv.adapter = adapter
+            rv.isNestedScrollingEnabled = false
         }
+        setup(R.id.rvSanitaryNapkins, napkins)
+        setup(R.id.rvWetWipes, wipes)
+        setup(R.id.rvFacialTissues, tissues)
+        setup(R.id.rvHandSanitizers, sanitizers)
 
-        setup(rvNapkins, adapterNapkins)
-        setup(rvWipes, adapterWipes)
-        setup(rvTissues, adapterTissues)
-        setup(rvSanitizers, adapterSanitizers)
+        containers = listOf(
+            findViewById(R.id.containerNapkins), findViewById(R.id.containerWipes),
+            findViewById(R.id.containerTissues), findViewById(R.id.containerSanitizers)
+        )
     }
 
     private fun setupButtons() {
-        findViewById<Button>(R.id.btn_sales_napkins).setOnClickListener { toggleVisibility(containerNapkins) }
-        findViewById<Button>(R.id.btn_sales_wipes).setOnClickListener { toggleVisibility(containerWipes) }
-        findViewById<Button>(R.id.btn_sales_tissues).setOnClickListener { toggleVisibility(containerTissues) }
-        findViewById<Button>(R.id.btn_sales_sanitizers).setOnClickListener { toggleVisibility(containerSanitizers) }
+        findViewById<Button>(R.id.btn_sales_napkins).setOnClickListener { toggle(containers[0]) }
+        findViewById<Button>(R.id.btn_sales_wipes).setOnClickListener { toggle(containers[1]) }
+        findViewById<Button>(R.id.btn_sales_tissues).setOnClickListener { toggle(containers[2]) }
+        findViewById<Button>(R.id.btn_sales_sanitizers).setOnClickListener { toggle(containers[3]) }
     }
 
-    private fun toggleVisibility(view: View) {
+    private fun toggle(view: View) {
         view.visibility = if (view.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+    }
+
+    /** Product names can change on the Products page; older orders don't carry their name. */
+    private fun observeTrayNames() {
+        val ref = DeviceSession.ref(this, "trays")
+        traysRef = ref
+        traysListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                trayNames.clear()
+                for (tray in 1..ProductCatalog.TRAY_COUNT) {
+                    trayNames[tray] = ProductCatalog.name(tray, snapshot.child("tray_$tray").child("product").value)
+                }
+                render()
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        ref.addValueEventListener(traysListener!!)
     }
 
     private fun observeOrders() {
@@ -97,77 +109,8 @@ class SalesMonitoringActivity : BaseActivity() {
         ordersRef = ref
         ordersListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val napkinsList = mutableListOf<SalesTransaction>()
-                val wipesList = mutableListOf<SalesTransaction>()
-                val tissuesList = mutableListOf<SalesTransaction>()
-                val sanitizersList = mutableListOf<SalesTransaction>()
-
-                for (child in snapshot.children) {
-                    if (child.key == "summary") continue
-                    val order = try {
-                        child.getValue(Order::class.java)
-                    } catch (e: DatabaseException) {
-                        null
-                    } ?: continue
-                    
-                    // Map tray to product name
-                    val productName = trayMapping[order.tray] ?: "Unknown Tray ${order.tray}"
-                    
-                    // Extract time from datetime "yyyy-MM-dd HH:mm:ss" to "hh:mm a"
-                    val timeFormatted = try {
-                        val inputSdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-                        val outputTimeSdf = SimpleDateFormat("hh:mm a", Locale.US)
-                        val date = inputSdf.parse(order.datetime)
-                        if (date != null) outputTimeSdf.format(date) else ""
-                    } catch (e: Exception) {
-                        ""
-                    }
-
-                    // Convert Order to SalesTransaction for the adapter
-                    // The date in JSON is "yyyy-MM-dd", convert to "MM/dd/yyyy" if needed for consistency
-                    val dateFormatted = try {
-                        val inputSdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-                        val outputDateSdf = SimpleDateFormat("MM/dd/yyyy", Locale.US)
-                        val dateObj = inputSdf.parse(order.date)
-                        if (dateObj != null) outputDateSdf.format(dateObj) else order.date
-                    } catch (e: Exception) {
-                        order.date
-                    }
-
-                    val transaction = SalesTransaction(
-                        itemsSold = productName,
-                        date = dateFormatted,
-                        time = timeFormatted
-                    )
-
-                    // Categorize based on tray
-                    when (order.tray) {
-                        1, 2 -> napkinsList.add(transaction)
-                        3, 4 -> wipesList.add(transaction)
-                        5, 6 -> tissuesList.add(transaction)
-                        7, 8 -> sanitizersList.add(transaction)
-                    }
-                }
-
-                // Sort lists by newest
-                val sortSdf = SimpleDateFormat("MM/dd/yyyy hh:mm a", Locale.US)
-                val comparator = Comparator<SalesTransaction> { t1, t2 ->
-                    try {
-                        val d1 = sortSdf.parse("${t1.date} ${t1.time}")
-                        val d2 = sortSdf.parse("${t2.date} ${t2.time}")
-                        d2?.compareTo(d1) ?: 0
-                    } catch (e: Exception) { 0 }
-                }
-
-                napkinsList.sortWith(comparator)
-                wipesList.sortWith(comparator)
-                tissuesList.sortWith(comparator)
-                sanitizersList.sortWith(comparator)
-
-                adapterNapkins.updateData(napkinsList)
-                adapterWipes.updateData(wipesList)
-                adapterTissues.updateData(tissuesList)
-                adapterSanitizers.updateData(sanitizersList)
+                lastOrders = snapshot
+                render()
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -177,8 +120,57 @@ class SalesMonitoringActivity : BaseActivity() {
         ref.addValueEventListener(ordersListener!!)
     }
 
+    private fun render() {
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        monthView.text = "${MonthWeeks.monthTitle(today)} · grouped by week · starts over each month"
+
+        // category → week → orders
+        val byCategory = mutableMapOf<String, TreeMap<Int, MutableList<SalesTransaction>>>()
+        val inTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+        val outTime = SimpleDateFormat("hh:mm a", Locale.US)
+        val outDate = SimpleDateFormat("MM/dd/yyyy", Locale.US)
+        val inDate = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
+        for (child in lastOrders?.children ?: emptyList()) {
+            if (child.key == "summary") continue
+            val order = try {
+                child.getValue(Order::class.java)
+            } catch (e: DatabaseException) {
+                null
+            } ?: continue
+            if (order.tray !in 1..ProductCatalog.TRAY_COUNT) continue
+            if (!MonthWeeks.inThisMonth(order.date, today)) continue
+
+            val name = if (order.product.isNotBlank()) ProductCatalog.name(order.tray, order.product)
+                       else trayNames[order.tray] ?: ProductCatalog.defaultName(order.tray)
+            val time = try { inTime.parse(order.datetime)?.let { outTime.format(it) } ?: "" } catch (e: Exception) { "" }
+            val date = try { inDate.parse(order.date)?.let { outDate.format(it) } ?: order.date } catch (e: Exception) { order.date }
+
+            val weeks = byCategory.getOrPut(ProductCatalog.category(order.tray)) {
+                TreeMap<Int, MutableList<SalesTransaction>>(Collections.reverseOrder())
+            }
+            weeks.getOrPut(MonthWeeks.week(order.date)) { mutableListOf() }
+                .add(SalesTransaction(itemsSold = "$name  ₱${order.price}", date = date, time = time,
+                    sortKey = order.datetime.ifBlank { order.date }))
+        }
+
+        for ((category, adapter) in adapters) {
+            val rows = mutableListOf<SalesTransaction>()
+            val weeks = byCategory[category]
+            if (weeks != null) {
+                for ((week, orders) in weeks) {                      // newest week first
+                    val total = orders.size
+                    rows.add(SalesTransaction(header = "${MonthWeeks.label(week, today)}  ($total sold)"))
+                    rows.addAll(orders.sortedByDescending { it.sortKey })
+                }
+            }
+            adapter.updateData(rows)
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         ordersListener?.let { ordersRef?.removeEventListener(it) }
+        traysListener?.let { traysRef?.removeEventListener(it) }
     }
 }

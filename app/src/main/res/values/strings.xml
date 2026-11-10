@@ -18,5 +18,7 @@
     <string name="sanitary_napkins">Sanitary Napkins</string>
     <string name="wet_wipes">Wet Wipes</string>
     <string name="facial_tissues">Facial Tissues</string>
-    <string name="hand_sanitizers">Hand Sanitizers</string>
+    <string name="hand_sanitizers">Sanitizers</string>
+    <string name="sanivend_machines">Sanivend Machines</string>
+    <string name="welcome_tagline">Smart hygiene vending</string>
 </resources>

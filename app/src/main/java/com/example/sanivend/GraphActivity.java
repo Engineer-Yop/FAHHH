@@ -2,31 +2,32 @@ package com.example.sanivend;
 
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
-import java.util.ArrayList;
-import java.util.List;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+/**
+ * Sales Performance: items sold Weekly (Sun–Sat), Monthly (each day of this month)
+ * or Annually (Jan–Dec), for all products or one category.
+ */
 public class GraphActivity extends BaseActivity {
 
     private SimpleLineGraphView lineGraph;
+    private TextView totalView;
     private Button btnWeekly, btnMonthly, btnAnnually;
     private Button catAll, catNapkins, catWipes, catTissues, catSanitizers;
-    private List<Button> timeframeButtons = new ArrayList<>();
-    private List<Button> categoryButtons = new ArrayList<>();
-    
-    private AnalyticsViewModel viewModel;
+    private final List<Button> timeframeButtons = new ArrayList<>();
 
-    // Redefined labels as per your request
-    private final String[] hourlyLabels = {
-        "12am", "1am", "2am", "3am", "4am", "5am", "6am", "7am", "8am", "9am", "10am", "11am",
-        "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm", "7pm", "8pm", "9pm", "10pm", "11pm"
-    };
-    private final String[] weeklyLabels = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}; 
-    private final String[] monthlyLabels = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    private AnalyticsViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,71 +43,58 @@ public class GraphActivity extends BaseActivity {
         });
 
         lineGraph = findViewById(R.id.line_graph);
-        
-        // Timeframe buttons
+        totalView = findViewById(R.id.tv_period_total);
+
         btnWeekly = findViewById(R.id.btn_weekly);
         btnMonthly = findViewById(R.id.btn_monthly);
         btnAnnually = findViewById(R.id.btn_annually);
-        
-        // Today (hourly) · This Week (Sun–Sat) · This Year (Jan–Dec)
-        btnAnnually.setText("Today");
-        btnWeekly.setText("This Week");
-        btnMonthly.setText("This Year");
-        btnAnnually.setTag(SalesBuckets.TODAY);
         btnWeekly.setTag(SalesBuckets.WEEK);
-        btnMonthly.setTag(SalesBuckets.YEAR);
-        timeframeButtons.add(btnAnnually);
+        btnMonthly.setTag(SalesBuckets.MONTH);
+        btnAnnually.setTag(SalesBuckets.YEAR);
         timeframeButtons.add(btnWeekly);
         timeframeButtons.add(btnMonthly);
+        timeframeButtons.add(btnAnnually);
 
-        // Category buttons
         catAll = findViewById(R.id.cat_all);
         catNapkins = findViewById(R.id.cat_napkins);
         catWipes = findViewById(R.id.cat_wipes);
         catTissues = findViewById(R.id.cat_tissues);
         catSanitizers = findViewById(R.id.cat_sanitizers);
-        
-        categoryButtons.add(catAll);
-        categoryButtons.add(catNapkins);
-        categoryButtons.add(catWipes);
-        categoryButtons.add(catTissues);
-        categoryButtons.add(catSanitizers);
 
         setupViewModel();
         setupFilters();
-        
-        // Default view: this year (Jan - Dec)
-        setMode(SalesBuckets.YEAR, monthlyLabels);
+
+        setMode(SalesBuckets.WEEK);
         setCategory(null);
     }
 
     private void setupViewModel() {
         viewModel = new ViewModelProvider(this).get(AnalyticsViewModel.class);
         viewModel.setDevice(DeviceSession.id(this));
-        
         viewModel.getChartData().observe(this, data -> {
-            if (data != null) {
-                lineGraph.setData(data);
-            }
+            if (data != null) lineGraph.setData(data);
+        });
+        viewModel.getTotals().observe(this, text -> {
+            if (text != null) totalView.setText(text);
         });
     }
 
     private void setupFilters() {
-        btnAnnually.setOnClickListener(v -> setMode(SalesBuckets.TODAY, hourlyLabels));
-        btnWeekly.setOnClickListener(v -> setMode(SalesBuckets.WEEK, weeklyLabels));
-        btnMonthly.setOnClickListener(v -> setMode(SalesBuckets.YEAR, monthlyLabels));
+        btnWeekly.setOnClickListener(v -> setMode(SalesBuckets.WEEK));
+        btnMonthly.setOnClickListener(v -> setMode(SalesBuckets.MONTH));
+        btnAnnually.setOnClickListener(v -> setMode(SalesBuckets.YEAR));
 
         catAll.setOnClickListener(v -> setCategory(null));
-        catNapkins.setOnClickListener(v -> setCategory("Sanitary Napkins"));
-        catWipes.setOnClickListener(v -> setCategory("Wet Wipes"));
-        catTissues.setOnClickListener(v -> setCategory("Facial Tissues"));
-        catSanitizers.setOnClickListener(v -> setCategory("Hand Sanitizers"));
+        catNapkins.setOnClickListener(v -> setCategory(ProductCatalog.NAPKINS));
+        catWipes.setOnClickListener(v -> setCategory(ProductCatalog.WIPES));
+        catTissues.setOnClickListener(v -> setCategory(ProductCatalog.TISSUES));
+        catSanitizers.setOnClickListener(v -> setCategory(ProductCatalog.SANITIZERS));
     }
 
-    private void setMode(String mode, String[] labels) {
-        lineGraph.setLabels(labels);
+    private void setMode(String mode) {
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
+        lineGraph.setLabels(SalesBuckets.labels(mode, today));
         viewModel.setMode(mode);
-        
         for (Button btn : timeframeButtons) {
             btn.setSelected(mode.equals(btn.getTag()));
         }
@@ -115,9 +103,9 @@ public class GraphActivity extends BaseActivity {
     private void setCategory(String category) {
         viewModel.setCategory(category);
         catAll.setSelected(category == null);
-        catNapkins.setSelected("Sanitary Napkins".equals(category));
-        catWipes.setSelected("Wet Wipes".equals(category));
-        catTissues.setSelected("Facial Tissues".equals(category));
-        catSanitizers.setSelected("Hand Sanitizers".equals(category));
+        catNapkins.setSelected(ProductCatalog.NAPKINS.equals(category));
+        catWipes.setSelected(ProductCatalog.WIPES.equals(category));
+        catTissues.setSelected(ProductCatalog.TISSUES.equals(category));
+        catSanitizers.setSelected(ProductCatalog.SANITIZERS.equals(category));
     }
 }

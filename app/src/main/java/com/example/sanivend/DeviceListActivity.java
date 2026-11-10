@@ -41,7 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * My Machines: the first screen after signing in.
+ * Sanivend Machines: the first screen after signing in.
  * Lists the machines paired to this account (/users/{uid}/devices), shows if each
  * is online, and pairs new ones with the Machine ID + pairing code from the LCD.
  */
@@ -72,7 +72,7 @@ public class DeviceListActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null || !user.isEmailVerified()) {
+        if (user == null || !AccountVerification.isVerifiedHere(this, user)) {
             startActivity(new Intent(this, MainActivity.class));
             finish();
             return;
@@ -95,8 +95,10 @@ public class DeviceListActivity extends AppCompatActivity {
 
         askNotificationPermission();
         TrayAlerts.createChannels(this);
-        TrayAlertMonitor.start(this);                  // live stock/expiry alerts for all my machines
-        TrayAlerts.scheduleBackgroundChecks(this);     // and every 15 min when the app is closed
+        TrayAlertMonitor.start(this);                  // live order/stock/refill/expiry alerts for all my machines
+        MonitorService.start(this);                    // keeps them running after the app is closed
+        TrayAlerts.scheduleBackgroundChecks(this);     // and a check every 15 min as a backup
+        askToKeepAlertsRunning();
 
         listenToMyDevices();
     }
@@ -328,6 +330,7 @@ public class DeviceListActivity extends AppCompatActivity {
 
     /** Signs out, stops alerts for this account and returns to the login screen. */
     static void logout(android.app.Activity activity) {
+        MonitorService.stop(activity);
         TrayAlertMonitor.stop();
         NotificationManagerCompat.from(activity).cancelAll();
         DeviceSession.clear(activity);
@@ -355,7 +358,38 @@ public class DeviceListActivity extends AppCompatActivity {
         if (requestCode == 101 && grantResults.length > 0
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             TrayAlerts.checkNow(this);
+            MonitorService.start(this);
+            askToKeepAlertsRunning();
         }
+    }
+
+    /**
+     * Phones save battery by pausing apps in the background, which can delay alerts.
+     * Asks once whether to open the setting that lets SaniVend keep running.
+     */
+    private void askToKeepAlertsRunning() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                   != PackageManager.PERMISSION_GRANTED) return;     // ask for notifications first
+        android.os.PowerManager pm = (android.os.PowerManager) getSystemService(POWER_SERVICE);
+        if (pm == null || pm.isIgnoringBatteryOptimizations(getPackageName())) return;
+        android.content.SharedPreferences prefs = getSharedPreferences("device_list", MODE_PRIVATE);
+        if (prefs.getBoolean("asked_battery", false)) return;
+        prefs.edit().putBoolean("asked_battery", true).apply();
+        new AlertDialog.Builder(this)
+                .setTitle("Keep alerts on time?")
+                .setMessage("To get order, stock and expiry alerts right away while SaniVend is closed, "
+                        + "set SaniVend to \"Don't optimize\" / \"Unrestricted\" in the next screen.")
+                .setPositiveButton("Open settings", (d, w) -> {
+                    try {
+                        startActivity(new Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+                    } catch (RuntimeException ignored) {
+                        // some phones don't have this screen
+                    }
+                })
+                .setNegativeButton("Not now", null)
+                .show();
     }
 
     private int dp(int v) {

@@ -3,6 +3,7 @@ package com.example.sanivend;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -35,8 +36,8 @@ public class AlertRulesTest {
         AlertRules.Alert a = AlertRules.stock(8, "Alcosafe", 2, 7);
         assertEquals(AlertRules.Level.LOW, a.level);
         assertTrue(a.needsNotification());
-        assertEquals("Low stock — Tray 8", a.title);
-        assertEquals("Alcosafe is running low: only 2 of 7 left.", a.message);
+        assertEquals("Low stock — Tray 8 needs a refill", a.title);
+        assertEquals("Alcosafe is running low: only 2 of 7 left. Refill tray 8 soon.", a.message);
     }
 
     @Test
@@ -51,8 +52,8 @@ public class AlertRulesTest {
     public void zeroIsOutOfStock() {
         AlertRules.Alert a = AlertRules.stock(6, "Blest", 0, 7);
         assertEquals(AlertRules.Level.EMPTY, a.level);
-        assertEquals("Out of stock — Tray 6", a.title);
-        assertEquals("Blest is empty (0 of 7 left). Refill tray 6.", a.message);
+        assertEquals("Out of stock — Tray 6 needs a refill", a.title);
+        assertEquals("Blest is empty (0 of 7 left). Refill tray 6 now.", a.message);
     }
 
     @Test
@@ -152,5 +153,25 @@ public class AlertRulesTest {
     @Test
     public void showDateFormat() {
         assertEquals("26/12/2026", AlertRules.showDate("2026-12-26"));
+    }
+
+    // ── Refill confirmation ──
+
+    @Test
+    public void refillWhenStockGoesBackToCapacity() {
+        AlertRules.Alert a = AlertRules.refill(3, "Kleenfant", 1, 7, 7);
+        assertEquals(AlertRules.Level.REFILLED, a.level);
+        assertEquals("Refilled — Tray 3", a.title);
+        assertEquals("Kleenfant was refilled: 7 of 7 in the tray (was 1).", a.message);
+        assertNotNull(AlertRules.refill(3, "Kleenfant", 0, 7, 7));
+    }
+
+    @Test
+    public void noRefillAlertOtherwise() {
+        assertNull(AlertRules.refill(3, "Kleenfant", null, 7, 7));   // first look: no history yet
+        assertNull(AlertRules.refill(3, "Kleenfant", 7, 7, 7));      // was already full
+        assertNull(AlertRules.refill(3, "Kleenfant", 2, 5, 7));      // topped up but not full
+        assertNull(AlertRules.refill(3, "Kleenfant", 7, 6, 7));      // a sale, not a refill
+        assertNull(AlertRules.refill(3, "Kleenfant", 2, null, 7));
     }
 }

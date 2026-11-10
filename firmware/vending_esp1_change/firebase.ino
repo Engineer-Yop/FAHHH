@@ -7,7 +7,6 @@
 //           orders/order_N, orders/summary
 //           totals/daily/YYYY-MM-DD, totals/weekly/YYYY-Www
 //           trays/tray_N/stock, trays/tray_N/capacity, notifications/expiry_tray_N
-//           coins {p1, p5, p10: "ok"|"empty"}  (from the IR sensors, coinlevel.ino)
 //  Reads:   trays            all trays (price, expiry, stock) in one request, every minute while idle
 //           trays/tray_N          again each time that tray's button is pressed (price, stock, stock_source)
 //  Stock: trays with "stock_source":"sensor" are measured by ESP32 #2 (ToF), not counted here.
@@ -74,11 +73,6 @@ void firebase_onConnected() {
   lastExpiryCheckDate = getFormattedDate();
   lastTraySync = millis();
   cloudReady = true;
-}
-
-// WiFi up and the first sync done (used by coinlevel.ino)
-bool firebase_isOnline() {
-  return cloudReady && WiFi.status() == WL_CONNECTED;
 }
 
 // Call from loop() while IDLE
@@ -291,6 +285,11 @@ void firebase_syncTrays() {
     int stock = jsonInt(obj, "stock", -1);
     if (stock >= 0) trayStock[i] = stock;
     traySensor[i] = (jsonString(obj, "stock_source") == "sensor");
+    String product = jsonString(obj, "product");
+    if (product.length() && product != trayProduct[i]) {
+      trayProduct[i] = product;
+      Serial.println("[Product] Tray " + String(i + 1) + ": " + product);
+    }
 
     String expiry = jsonString(obj, "expiry");
     if (expiry != trayExpiry[i]) {
@@ -321,6 +320,8 @@ void firebase_refreshPrice(int tray) {
   int stock = jsonInt(body, "stock", -1);
   if (stock >= 0) trayStock[tray] = stock;
   traySensor[tray] = (jsonString(body, "stock_source") == "sensor");
+  String product = jsonString(body, "product");
+  if (product.length()) trayProduct[tray] = product;
 }
 
 // ── Expiry check ──────────────────────────
@@ -382,6 +383,7 @@ void firebase_logOrder(int tray, int amountPaid, int change) {
     ",\"amount_paid\":" + String(amountPaid) +
     ",\"change\":" + String(change) +
     ",\"price\":" + String(price) +
+    (trayProduct[tray].length() ? ",\"product\":\"" + trayProduct[tray] + "\"" : String("")) +
     ",\"datetime\":\"" + dt + "\"" +
     ",\"date\":\"" + date + "\"" +
     ",\"week\":\"" + weekKey + "\"" +

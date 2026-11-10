@@ -22,7 +22,7 @@
                           // puts its function list above the other tabs' #includes
 #include <Preferences.h>  // keeps the pairing code in flash (device.ino)
 
-#define FIRMWARE_VERSION "2.1"
+#define FIRMWARE_VERSION "2.2"
 
 // ── This machine (set in device.ino) ─────
 String DEVICE_ID = "";    // e.g. "SV-A1B2C3"
@@ -52,6 +52,9 @@ PCF8574 pcf(0x20);
 int    trayPrices[TRAY_COUNT] = {5, 5, 5, 5, 10, 10, 10, 10};
 int    trayStock[TRAY_COUNT]  = {7, 7, 7, 7, 7, 7, 7, 7};
 String trayExpiry[TRAY_COUNT] = {"", "", "", "", "", "", "", ""};
+// Product name set in the app (Products → Change product); saved with each order so the
+// app's order notification and Sales Monitoring show what was actually sold
+String trayProduct[TRAY_COUNT] = {"", "", "", "", "", "", "", ""};
 // true = ESP32 #2 measures this tray with its ToF sensor ("stock_source":"sensor" in Firebase):
 // this board then doesn't count it down, and won't sell it when it reads 0
 bool   traySensor[TRAY_COUNT] = {false, false, false, false, false, false, false, false};
@@ -80,7 +83,6 @@ void setup() {
   uart_init();
   uart_sendDeviceId();             // ESP32 #2 logs under the same machine ID
   change_init();                   // change servos on this board now
-  coinlevel_init();                // IR sensors on the P1 / P5 / P10 coin tubes
   coin_inhibit(true);              // coins off until a tray is selected
 
   lcd_showDeviceInfo();            // ID + pairing code, so the owner can add it in the app
@@ -95,7 +97,6 @@ void setup() {
 }
 
 void loop() {
-  coinlevel_tick(currentState == IDLE);   // coin tubes: read always, upload only while idle
   switch (currentState) {
 
     // ── Waiting for a tray button ──────────

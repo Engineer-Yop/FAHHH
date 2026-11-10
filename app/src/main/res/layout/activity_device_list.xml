@@ -30,7 +30,7 @@
         android:layout_marginTop="24dp"
         android:gravity="center"
         android:letterSpacing="0.3"
-        android:text="MY\nMACHINES"
+        android:text="SANIVEND\nMACHINES"
         android:textColor="@color/black"
         android:textSize="26sp"
         android:textStyle="bold"

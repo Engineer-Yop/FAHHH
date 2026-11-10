@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Welcome page shown every time the app starts, then it moves on to Login / Sanivend Machines. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_color"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="32dp"
+    tools:context=".WelcomeActivity">
+
+    <ImageView
+        android:id="@+id/welcome_logo"
+        android:layout_width="240dp"
+        android:layout_height="240dp"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/app_logo_description"
+        android:scaleType="fitCenter"
+        android:src="@drawable/sanivend_logo" />
+
+    <TextView
+        android:id="@+id/welcome_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:letterSpacing="0.35"
+        android:text="SANIVEND"
+        android:textColor="@color/black"
+        android:textSize="30sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/welcome_tagline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/welcome_tagline"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp" />
+
+    <ProgressBar
+        android:id="@+id/welcome_progress"
+        style="?android:attr/progressBarStyleSmall"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginTop="40dp"
+        android:indeterminateTint="@color/text_primary" />
+</LinearLayout>

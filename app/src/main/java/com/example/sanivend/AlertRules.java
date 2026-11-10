@@ -4,8 +4,9 @@ package com.example.sanivend;
  * Decides whether a tray needs a stock or expiry alert.
  * Plain Java (no Android code), so it is covered by AlertRulesTest.
  *
- *   Stock:  0 left            → OUT OF STOCK
- *           1–2 left          → LOW STOCK
+ *   Stock:  0 left            → OUT OF STOCK  (tray needs a refill)
+ *           1–2 left          → LOW STOCK     (tray needs a refill)
+ *   Refill: stock goes back up to capacity → REFILLED (one confirmation per refill)
  *   Expiry: date has passed   → EXPIRED       (reminds once a day)
  *           date is today     → EXPIRES TODAY
  *           within 7 days     → EXPIRING SOON (the same 7-day window the ESP32 uses)
@@ -17,9 +18,9 @@ public final class AlertRules {
     /** Warn this many days before the expiry date. */
     public static final int EXPIRY_WARN_DAYS = 7;
 
-    public enum Kind { STOCK, EXPIRY }
+    public enum Kind { STOCK, EXPIRY, REFILL }
 
-    public enum Level { OK, LOW, EMPTY, SOON, TODAY, EXPIRED }
+    public enum Level { OK, LOW, EMPTY, SOON, TODAY, EXPIRED, REFILLED }
 
     /** One tray's result for one kind of alert. */
     public static final class Alert {
@@ -57,17 +58,32 @@ public final class AlertRules {
 
         if (stock <= 0) {
             return new Alert(Kind.STOCK, Level.EMPTY, tray,
-                    "Out of stock — Tray " + tray,
-                    product + " is empty (0" + of + " left). Refill tray " + tray + ".",
+                    "Out of stock — Tray " + tray + " needs a refill",
+                    product + " is empty (0" + of + " left). Refill tray " + tray + " now.",
                     "EMPTY");
         }
         if (stock <= LOW_STOCK_AT) {
             return new Alert(Kind.STOCK, Level.LOW, tray,
-                    "Low stock — Tray " + tray,
-                    product + " is running low: only " + stock + of + " left.",
+                    "Low stock — Tray " + tray + " needs a refill",
+                    product + " is running low: only " + stock + of + " left. Refill tray " + tray + " soon.",
                     "LOW:" + stock);
         }
         return new Alert(Kind.STOCK, Level.OK, tray, "", "", "OK");
+    }
+
+    /**
+     * Refill confirmation: the stock went from below capacity back up to capacity
+     * (the owner restocked the tray and tapped "Fill to 7", or the ToF sensors saw it full).
+     * @param previous the stock the app saw last time, or null the first time (no alert then)
+     * @return the alert, or null when this isn't a refill
+     */
+    public static Alert refill(int tray, String product, Integer previous, Integer stock, int capacity) {
+        if (previous == null || stock == null || capacity <= 0) return null;
+        if (previous >= capacity || stock < capacity) return null;
+        return new Alert(Kind.REFILL, Level.REFILLED, tray,
+                "Refilled — Tray " + tray,
+                product + " was refilled: " + stock + " of " + capacity + " in the tray (was " + previous + ").",
+                "REFILLED:" + previous + ">" + stock);
     }
 
     /**

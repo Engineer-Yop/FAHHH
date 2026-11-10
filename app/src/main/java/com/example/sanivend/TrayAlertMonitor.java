@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -19,10 +20,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Live alerts: while the app is running, listens to the trays of every machine
- * paired to the signed-in account, so a sale that empties a tray (or a new
- * expiry date, or an empty change tube) shows a notification within seconds.
- * When the app is closed, InventoryWorker checks every 15 minutes instead.
+ * Live alerts: listens to the trays and orders of every machine paired to the
+ * signed-in account, so a sale, a tray that runs low or empty, a refill, a new
+ * expiry date or an empty change tube shows a notification within seconds.
+ *
+ * It keeps running in the background inside MonitorService (the small
+ * "Monitoring your machines" notification). If Android stops it anyway,
+ * InventoryWorker still checks every 15 minutes.
  */
 public final class TrayAlertMonitor {
 
@@ -36,6 +40,8 @@ public final class TrayAlertMonitor {
     private static final Map<String, ValueEventListener> trayListeners = new HashMap<>();
     /** machine ID → its change-coins listener (IR sensors on the P1/P5/P10 tubes) */
     private static final Map<String, ValueEventListener> coinListeners = new HashMap<>();
+    /** machine ID → its new-order listener */
+    private static final Map<String, ChildEventListener> orderListeners = new HashMap<>();
     /** machine ID → display name */
     private static final Map<String, String> names = new HashMap<>();
 
@@ -78,6 +84,10 @@ public final class TrayAlertMonitor {
             coinsRef(e.getKey()).removeEventListener(e.getValue());
         }
         coinListeners.clear();
+        for (Map.Entry<String, ChildEventListener> e : orderListeners.entrySet()) {
+            ordersRef(e.getKey()).removeEventListener(e.getValue());
+        }
+        orderListeners.clear();
         names.clear();
         myDevicesRef = null;
         myDevicesListener = null;
@@ -97,6 +107,8 @@ public final class TrayAlertMonitor {
                 traysRef(id).removeEventListener(trayListeners.remove(id));
                 ValueEventListener c = coinListeners.remove(id);
                 if (c != null) coinsRef(id).removeEventListener(c);
+                ChildEventListener o = orderListeners.remove(id);
+                if (o != null) ordersRef(id).removeEventListener(o);
                 names.remove(id);
             }
         }
@@ -132,6 +144,54 @@ public final class TrayAlertMonitor {
         };
         coinListeners.put(id, c);
         coinsRef(id).addValueEventListener(c);
+
+        followOrders(id);
+    }
+
+    /**
+     * New orders: first remember the newest existing order (so old ones never pop up),
+     * then listen for every order_N added after it.
+     */
+    private static void followOrders(final String id) {
+        final ChildEventListener l = new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot snapshot, String previousChildName) {
+                String name = names.containsKey(id) ? names.get(id) : TrayAlerts.machineName(id, null);
+                OrderAlerts.onOrder(app, id, name, snapshot);
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot snapshot, String previousChildName) {
+                // The machine writes an order in one go; a later change is not a new sale.
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot snapshot) {}
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot snapshot, String previousChildName) {}
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.w(TAG, "Orders of " + id + " stopped: " + error.getMessage());
+            }
+        };
+        orderListeners.put(id, l);
+        ordersRef(id).get().addOnCompleteListener(task -> {
+            synchronized (TrayAlertMonitor.class) {
+                if (orderListeners.get(id) != l) return;          // machine removed or signed out meanwhile
+                if (task.isSuccessful() && task.getResult() != null) {
+                    String name = names.containsKey(id) ? names.get(id) : TrayAlerts.machineName(id, null);
+                    // Already seen before: show what came in while the app wasn't listening
+                    OrderAlerts.checkAll(app, id, name, task.getResult());
+                }
+                ordersRef(id).addChildEventListener(l);
+            }
+        });
+    }
+
+    private static DatabaseReference ordersRef(String id) {
+        return DeviceSession.deviceRef(id).child("orders");
     }
 
     private static DatabaseReference coinsRef(String id) {

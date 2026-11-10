@@ -2,7 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Background monitoring of orders/stock/expiry (MonitorService) and restart after reboot -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -14,15 +19,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Sanivend">
 
-        <!-- Login is the entry point; signed-in users skip straight to My Machines -->
+        <!-- Welcome page with the SaniVend logo, shown every time the app starts -->
         <activity
-            android:name=".MainActivity"
+            android:name=".WelcomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Login; signed-in users skip straight to Sanivend Machines -->
+        <activity android:name=".MainActivity" android:exported="false" />
 
         <activity android:name=".DeviceListActivity" android:exported="false" />
         <activity android:name=".DashboardActivity" android:exported="false" />
@@ -59,6 +67,25 @@
         <activity android:name=".ProductTissuesActivity" android:exported="false" />
         <activity android:name=".ProductSanitizersActivity" android:exported="false" />
         <activity android:name=".GraphActivity" android:exported="false" />
+
+        <!-- Keeps the live alerts running while the app is closed (free Firebase plan, no push server) -->
+        <service
+            android:name=".MonitorService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Real-time vending machine alerts for the owner: new orders, low stock, refills and product expiry, read from the machine's Firebase database" />
+        </service>
+
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

@@ -11,8 +11,8 @@ import kotlinx.coroutines.tasks.await
 /**
  * Background check (every 15 minutes, even when the app is closed):
  * for every machine paired to the signed-in account, reads its trays once and
- * lets TrayAlerts send or clear the stock and expiry notifications,
- * and reads its change tubes (/coins) for CoinAlerts.
+ * lets TrayAlerts send or clear the stock, refill and expiry notifications,
+ * reads its change tubes (/coins) for CoinAlerts and its new orders for OrderAlerts.
  */
 class InventoryWorker(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
@@ -29,6 +29,8 @@ class InventoryWorker(appContext: Context, workerParams: WorkerParameters) :
                 TrayAlerts.check(applicationContext, id, name, trays)
                 val coins = db.child("devices").child(id).child("coins").get().await()
                 CoinAlerts.check(applicationContext, id, name, coins)
+                val orders = db.child("devices").child(id).child("orders").get().await()
+                OrderAlerts.checkAll(applicationContext, id, name, orders)
             }
             Result.success()
         } catch (e: Exception) {

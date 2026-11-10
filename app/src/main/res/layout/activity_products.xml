@@ -187,7 +187,7 @@
                 </FrameLayout>
             </LinearLayout>
 
-            <!-- Category: Hand Sanitizers -->
+            <!-- Category: Sanitizers -->
             <TextView
                 android:id="@+id/label_hand_sanitizers"
                 android:layout_width="match_parent"
@@ -195,7 +195,7 @@
                 android:layout_marginHorizontal="24dp"
                 android:background="@drawable/product_label_bg"
                 android:gravity="center"
-                android:text="Hand Sanitizers"
+                android:text="Sanitizers"
                 android:textColor="@color/black"
                 android:textSize="18sp"
                 android:textStyle="bold"

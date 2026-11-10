@@ -38,7 +38,7 @@
             android:paddingBottom="24dp"
             android:gravity="center_horizontal">
 
-            <!-- Category Header: Hand Sanitizers -->
+            <!-- Category Header: Sanitizers -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
@@ -47,7 +47,7 @@
                 android:gravity="center_vertical"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
-                android:text="Hand Sanitizers"
+                android:text="Sanitizers"
                 android:textColor="@color/black"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -62,6 +62,7 @@
                 android:background="@drawable/product_image_bg"
                 android:padding="8dp">
                 <ImageView
+                    android:id="@+id/img_hygienix"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:src="@drawable/greencross"
@@ -77,6 +78,16 @@
                 android:background="@drawable/product_info_bg"
                 android:orientation="vertical"
                 android:padding="20dp">
+                <TextView
+                    android:id="@+id/tv_name_hygienix"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="HYGIENIX"
+                    android:textColor="@color/text_primary"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -122,6 +133,16 @@
                         android:src="@android:drawable/ic_menu_edit"
                         app:tint="@color/black" />
                 </LinearLayout>
+
+                <Button
+                    android:id="@+id/btn_replace_hygienix"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:backgroundTint="@color/text_primary"
+                    android:text="Change product"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white" />
             </LinearLayout>
 
             <!-- Alcosafe Image Section -->
@@ -134,6 +155,7 @@
                 android:background="@drawable/product_image_bg"
                 android:padding="8dp">
                 <ImageView
+                    android:id="@+id/img_alcosafe"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:src="@drawable/alcosafe"
@@ -149,6 +171,16 @@
                 android:background="@drawable/product_info_bg"
                 android:orientation="vertical"
                 android:padding="20dp">
+                <TextView
+                    android:id="@+id/tv_name_alcosafe"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="ALCOSAFE"
+                    android:textColor="@color/text_primary"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -194,6 +226,16 @@
                         android:src="@android:drawable/ic_menu_edit"
                         app:tint="@color/black" />
                 </LinearLayout>
+
+                <Button
+                    android:id="@+id/btn_replace_alcosafe"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:backgroundTint="@color/text_primary"
+                    android:text="Change product"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white" />
             </LinearLayout>
 
         </LinearLayout>

@@ -25,6 +25,7 @@ public class InventoryTrackingActivity extends BaseActivity {
     private DatabaseReference db;
     private ValueEventListener inventoryListener;
     private Map<Integer, TextView> trayViews = new HashMap<>();
+    private final Map<Integer, TextView> nameViews = new HashMap<>();
     private final Map<Integer, Integer> capacities = new HashMap<>();
 
     @Override
@@ -105,6 +106,9 @@ public class InventoryTrackingActivity extends BaseActivity {
         trayViews.put(6, findViewById(R.id.tv_count_tray_6));
         trayViews.put(7, findViewById(R.id.tv_count_tray_7));
         trayViews.put(8, findViewById(R.id.tv_count_tray_8));
+        int[] names = {R.id.tv_item_tray_1, R.id.tv_item_tray_2, R.id.tv_item_tray_3, R.id.tv_item_tray_4,
+                R.id.tv_item_tray_5, R.id.tv_item_tray_6, R.id.tv_item_tray_7, R.id.tv_item_tray_8};
+        for (int i = 0; i < names.length; i++) nameViews.put(i + 1, findViewById(names[i]));
     }
 
     private void observeInventory() {
@@ -122,6 +126,13 @@ public class InventoryTrackingActivity extends BaseActivity {
                             Object value = child.child("stock").getValue();
                             String quantityStr = (value != null)
                                     ? String.valueOf(TrayEditor.toInt(value)) : "0";
+
+                            // A product changed on the Products page shows its new name here too
+                            TextView nameView = nameViews.get(trayNum);
+                            if (nameView != null) {
+                                nameView.setText(ProductCatalog.name(trayNum,
+                                        child.child("product").getValue()).toUpperCase(java.util.Locale.ROOT));
+                            }
 
                             TextView tv = trayViews.get(trayNum);
                             if (tv != null) {
