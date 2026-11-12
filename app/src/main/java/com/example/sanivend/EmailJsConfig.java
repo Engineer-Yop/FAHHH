@@ -17,9 +17,9 @@ package com.example.sanivend;
  */
 public final class EmailJsConfig {
 
-    public static final String SERVICE_ID = "YOUR_SERVICE_ID";
-    public static final String TEMPLATE_ID = "YOUR_TEMPLATE_ID";
-    public static final String PUBLIC_KEY = "YOUR_PUBLIC_KEY";
+    public static final String SERVICE_ID = "service_xkuafs8";
+    public static final String TEMPLATE_ID = "template_8iopsyf";
+    public static final String PUBLIC_KEY = "JJG2aTTiuYf3nMRPX";
     public static final String PRIVATE_KEY = "";
 
     static final String SEND_URL = "https://api.emailjs.com/api/v1.0/email/send";
