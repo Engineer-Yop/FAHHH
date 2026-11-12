@@ -1,12 +1,11 @@
 // ─────────────────────────────────────────
 //  Vending Machine — ESP32 #2 (Mechanism)
 //  Vend servos   CH0–CH7   MG996R 360° (6V)
-//  Change servos CH12–CH15 SG90/MG90S positional (5V)
+//  No change dispenser (removed): the machine takes the price and gives no change
 //
 //  Tabs in this sketch folder:
 //    vending_esp2.ino  (this file — settings, command loop)
-//    change.ino        greedy change: P10 → P5 (A/B) → P1
-//    firebase.ino      WiFi + vend/change log
+//    firebase.ino      WiFi + vend log
 //    servo.ino         PCA9685 servo control
 //    stock.ino         tray stock from the ToF sensors -> Firebase
 //    tof.ino           PCA9548A MUX + 8x VL53L0X (calibrated with the tof_test sketch)
@@ -19,8 +18,8 @@
 #include <Adafruit_PWMServoDriver.h>
 
 // ── Feature switches ─────────────────────
-#define USE_TOF        1     // 1 = stock measured by the 8 ToF sensors (needs MUX + VL53L0X library)
-#define USE_FIREBASE   1     // 1 = log vends/change to Firebase (set WiFi in firebase.ino)
+#define USE_TOF        0     // 0 = ToF off: stock counted per sale by ESP32 #1 (1 = measured by sensors)
+#define USE_FIREBASE   1     // 1 = log vends to Firebase (set WiFi in firebase.ino)
 
 // ── I2C addresses ────────────────────────
 #define PCA9685_ADDR   0x40
@@ -36,18 +35,7 @@ Adafruit_PWMServoDriver pca9685 = Adafruit_PWMServoDriver(PCA9685_ADDR);
 // ── Vend servos (MG996R 360°) ────────────
 #define SERVO_STOP     307   // ~1500 µs
 #define SERVO_FORWARD  370   // ~1800 µs
-#define SERVO_VEND_MS  1500  // spin time per vend
-
-// ── Change servos (positional, 0° ↔ 90°) ─
-#define CHANGE_REST    150   // 0°
-#define CHANGE_PUSH    375   // 90°
-#define CHANGE_HOLD_MS 400
-#define CHANGE_WAIT_MS 300
-
-#define CH_1PESO       12    // SG90
-#define CH_5PESO_A     13    // SG90
-#define CH_10PESO      14    // MG90S
-#define CH_5PESO_B     15    // MG90S
+#define SERVO_VEND_MS  1300  // spin time per vend (1.3 s)
 
 // ── Trays + ToF stock ─────────────────────
 #define TRAY_CAPACITY      7      // items in a full tray (same as ESP32 #1)
@@ -72,7 +60,6 @@ bool   deviceIdChanged = false;
 // ── UART command codes ───────────────────
 #define CMD_NONE       0
 #define CMD_VEND       1
-#define CMD_CHANGE     2
 
 void setup() {
   Serial.begin(115200);
@@ -117,13 +104,6 @@ void loop() {
     firebase_logVend(value, ok);
 #endif
 
-  } else if (cmd == CMD_CHANGE) {
-    Serial.println("Change command: P" + String(value));
-    change_dispense(value);
-    uart_sendChangeDone();
-#if USE_FIREBASE
-    firebase_logChange(value);
-#endif
   }
 
   stock_tick();                          // background tray measuring + Firebase update

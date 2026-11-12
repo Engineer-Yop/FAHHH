@@ -17,9 +17,18 @@ void lcd_showMessage(String line1, String line2) {
   lcd.setCursor(0, 2);  lcd.print(line2);
 }
 
+// Boot splash, shown once when the machine is switched on
+void lcd_showSplash() {
+  lcd.clear();
+  lcd.setCursor(0, 0);  lcd.print("********************");
+  lcd.setCursor(4, 1);  lcd.print("WELCOME TO");
+  lcd.setCursor(2, 2);  lcd.print("SANIVEND MACHINE");
+  lcd.setCursor(0, 3);  lcd.print("********************");
+}
+
 void lcd_showWelcome() {
   lcd.clear();
-  lcd.setCursor(0, 0);  lcd.print("** VENDO MACHINE **");
+  lcd.setCursor(2, 0);  lcd.print("SaniVend Machine");
   lcd.setCursor(2, 1);  lcd.print("Select your tray");
   lcd.setCursor(2, 2);  lcd.print("then insert coins");
   lcd.setCursor(3, 3);  lcd.print("ID: " + DEVICE_ID);    // e.g. "ID: SV-A1B2C3"
@@ -39,7 +48,7 @@ void lcd_showSelected(int tray) {
   lcd.setCursor(0, 0);  lcd.print("Tray " + String(tray + 1) + " selected");
   lcd.setCursor(0, 1);  lcd.print("Price:   P" + String(getTrayPrice(tray)));
   lcd.setCursor(0, 2);  lcd.print("Balance: P" + String(coinBalance));
-  lcd.setCursor(0, 3);  lcd.print("Insert coins...");
+  lcd.setCursor(0, 3);  lcd.print("No change: pay exact");
 }
 
 // Shown for about a second while the price is read from Firebase
@@ -81,14 +90,11 @@ void lcd_showFailed(int tray) {
   lcd.setCursor(2, 2);  lcd.print("Tray " + String(tray + 1) + " jam/empty?");
 }
 
-void lcd_showChange(int change) {
+// Vend failed: the coins stay as credit (the machine can't give money back)
+void lcd_showCredit() {
   lcd.clear();
-  lcd.setCursor(2, 1);  lcd.print("Change: P" + String(change));
-  lcd.setCursor(2, 2);  lcd.print("Please collect");
-}
-
-void lcd_showRefund(int amount) {
-  lcd.clear();
-  lcd.setCursor(2, 1);  lcd.print("Refund: P" + String(amount));
-  lcd.setCursor(2, 2);  lcd.print("Please collect");
+  lcd.setCursor(0, 0);  lcd.print("Vend failed - sorry");
+  lcd.setCursor(0, 1);  lcd.print("Credit: P" + String(coinBalance));
+  lcd.setCursor(0, 2);  lcd.print("Press another tray");
+  lcd.setCursor(0, 3);  lcd.print("to use your credit");
 }

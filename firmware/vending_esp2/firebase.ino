@@ -107,9 +107,4 @@ void firebase_logVend(int tray, bool ok) {
             ",\"result\":\"" + String(ok ? "SUCCESS" : "FAILED") + "\"" +
             ",\"datetime\":\"" + fb2_dateTime() + "\"}");
 }
-
-void firebase_logChange(int amount) {
-  fb2_write("{\"type\":\"change\",\"amount\":" + String(amount) +
-            ",\"result\":\"DONE\",\"datetime\":\"" + fb2_dateTime() + "\"}");
-}
 #endif
