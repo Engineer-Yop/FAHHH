@@ -19,7 +19,7 @@
 #include <PCF8574.h>
 #include <Preferences.h>  // keeps the pairing code in flash (device.ino)
 
-#define FIRMWARE_VERSION "2.3"
+#define FIRMWARE_VERSION "2.4"
 
 // ── This machine (set in device.ino) ─────
 String DEVICE_ID = "";    // e.g. "SV-A1B2C3"

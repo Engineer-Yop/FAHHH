@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────
-//  tof.ino — PCA9548A MUX + 8x VL53L0X, one per tray
+//  tof.ino — TCA9548A MUX + 8x VL53L0X, one per tray
 //  MUX CH0–CH7 = Tray 1–8
 //
 //  Calibration (two points per tray, saved in flash by the tof_test sketch):

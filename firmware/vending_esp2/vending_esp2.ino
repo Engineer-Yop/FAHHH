@@ -8,7 +8,7 @@
 //    firebase.ino      WiFi + vend log
 //    servo.ino         PCA9685 servo control
 //    stock.ino         tray stock from the ToF sensors -> Firebase
-//    tof.ino           PCA9548A MUX + 8x VL53L0X (calibrated with the tof_test sketch)
+//    tof.ino           TCA9548A MUX + 8x VL53L0X (calibrated with the tof_test sketch)
 //    uart.ino          UART2 link to ESP32 #1
 //
 //  Libraries: Adafruit PWM Servo Driver (+ Adafruit BusIO)
@@ -18,12 +18,12 @@
 #include <Adafruit_PWMServoDriver.h>
 
 // ── Feature switches ─────────────────────
-#define USE_TOF        0     // 0 = ToF off: stock counted per sale by ESP32 #1 (1 = measured by sensors)
+#define USE_TOF        1     // 1 = read the ToF sensors (0 = off: everything counted by ESP32 #1)
 #define USE_FIREBASE   1     // 1 = log vends to Firebase (set WiFi in firebase.ino)
 
 // ── I2C addresses ────────────────────────
 #define PCA9685_ADDR   0x40
-#define MUX_ADDR       0x70  // A0–A2 to GND (new PCB). Use 0x73 if they are still floating.
+#define MUX_ADDR       0x70  // TCA9548A, A0–A2 to GND
 
 Adafruit_PWMServoDriver pca9685 = Adafruit_PWMServoDriver(PCA9685_ADDR);
 
@@ -46,10 +46,13 @@ Adafruit_PWMServoDriver pca9685 = Adafruit_PWMServoDriver(PCA9685_ADDR);
 #define TOF_OUT_OF_RANGE   8000   // library gives ~8190 when nothing is in range
 #define TOF_MIN_SPAN_MM    20     // EMPTY and FULL must differ by at least this much
 #define STOCK_REPUBLISH_MS 300000 // re-send sensor stock every 5 min (overrides manual edits)
+#define TOF_RAW_PUBLISH_MS 5000   // send all 8 raw distances to Firebase every 5 s
+                                  //   -> /devices/<ID>/tof_readings {tray_1..tray_8 (mm), updated}
 
 // Calibration backup (mm). The tof_test sketch saves the real values in flash and
 // those are used first; paste its "c" output here only if the flash gets erased.
-// 0 = not calibrated -> that tray is counted by ESP32 #1 instead.
+// 0 = not calibrated -> that tray is counted by ESP32 #1 instead (its raw mm is still sent
+// to Firebase, so the calibration can be worked out from those readings).
 const int TOF_EMPTY_MM[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 const int TOF_FULL_MM[8]  = {0, 0, 0, 0, 0, 0, 0, 0};
 

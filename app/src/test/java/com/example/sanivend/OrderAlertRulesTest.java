@@ -15,6 +15,11 @@ public class OrderAlertRulesTest {
         assertEquals(-1, OrderAlertRules.number("order_"));
         assertEquals(-1, OrderAlertRules.number("order_x"));
         assertEquals(-1, OrderAlertRules.number(null));
+        // newest-first keys (firmware 2.4)
+        assertEquals(2, OrderAlertRules.number("999998_order_2"));
+        assertEquals(126, OrderAlertRules.number("999874_order_126"));
+        assertEquals(-1, OrderAlertRules.number("x_order_2"));
+        assertEquals(-1, OrderAlertRules.number("999998_order_"));
     }
 
     @Test

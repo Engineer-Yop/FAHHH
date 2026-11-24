@@ -7,7 +7,9 @@
 //  falling item doesn't change it. Right after a vend the tray is
 //  measured again straight away.
 //
-//  Writes to Firebase: /devices/<ID>/trays/tray_N
+//  Writes to Firebase: /devices/<ID>/tof_readings  {tray_1..tray_8: mm, updated}  every 5 s
+//                       (-1 = sensor not answering, 8000 = nothing in range)
+//                     /devices/<ID>/trays/tray_N
 //    {stock, capacity, stock_source:"sensor", sensor_mm}   (calibrated trays)
 //    {stock_source:"count"}                                (other trays, once)
 //  ESP32 #1 reads stock_source: "sensor" trays are not counted down by it,
@@ -18,7 +20,9 @@ int  stockValue[8];          // accepted count, -1 = not known yet
 int  stockCandidate[8];
 int  stockCandidateCount[8];
 int  stockPublished[8];      // last value written to Firebase, -2 = never
-int  stockDistance[8];       // last distance in mm
+int  stockDistance[8];       // last distance in mm (calibrated trays)
+int  tofRawMm[8];            // last raw distance of every tray, -1 = no reading
+unsigned long tofRawLastPublish = 0;
 bool stockSourceSent[8];     // "count" marker written for uncalibrated trays
 int  stockScanTray = 0;
 unsigned long stockLastScan = 0;
@@ -31,6 +35,7 @@ void stock_init() {
     stockCandidateCount[i] = 0;
     stockPublished[i] = -2;
     stockDistance[i] = -1;
+    tofRawMm[i] = -1;
     stockSourceSent[i] = false;
   }
   // First full reading at start-up, so Firebase gets real values quickly
@@ -50,8 +55,9 @@ void stock_set(int tray, int n) {
 
 // immediate = accept this reading now (start-up, after a vend)
 void stock_measure(int tray, int samples, bool immediate) {
+  int d = tof_readMedian(tray, samples);   // every tray is read, calibrated or not
+  tofRawMm[tray] = d;
   if (!tof_isCalibrated(tray)) return;
-  int d = tof_readMedian(tray, samples);
   int n = tof_stockFromDistance(tray, d);
   if (n < 0) return;                     // no usable reading: keep the last value
   stockDistance[tray] = d;
@@ -83,6 +89,7 @@ void stock_tick() {
 void stock_publish() {
 #if USE_FIREBASE
   if (deviceId.length() == 0 || WiFi.status() != WL_CONNECTED) return;
+  tof_publishRaw();
   bool all = (millis() - stockLastRepublish >= STOCK_REPUBLISH_MS);
   if (all) stockLastRepublish = millis();
 
@@ -102,5 +109,22 @@ void stock_publish() {
                      ",\"sensor_mm\":" + String(stockDistance[i]) + "}";
     if (fb2_patch(path, payload) == 200) stockPublished[i] = stockValue[i];
   }
+#endif
+}
+
+// Raw distances of all 8 trays -> /devices/<ID>/tof_readings (one write every 5 s)
+void tof_publishRaw() {
+#if USE_FIREBASE && USE_TOF
+  if (millis() - tofRawLastPublish < TOF_RAW_PUBLISH_MS) return;
+  tofRawLastPublish = millis();
+  String p = "{";
+  String line = "[ToF mm]";
+  for (int i = 0; i < 8; i++) {
+    p += "\"tray_" + String(i + 1) + "\":" + String(tofRawMm[i]) + ",";
+    line += " T" + String(i + 1) + "=" + String(tofRawMm[i]);
+  }
+  p += "\"updated\":\"" + fb2_dateTime() + "\"}";
+  Serial.println(line);
+  fb2_patch("/tof_readings", p);
 #endif
 }

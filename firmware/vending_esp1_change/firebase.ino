@@ -4,7 +4,7 @@
 //
 //  Everything is under this machine's own folder: /devices/<DEVICE_ID>/...
 //  Writes:  info (id, pairing code, last_seen heartbeat every minute)
-//           orders/order_N, orders/summary
+//           orders/<999999-N>_order_N (newest first), orders/summary
 //           totals/daily/YYYY-MM-DD, totals/weekly/YYYY-Www
 //           trays/tray_N/stock, trays/tray_N/capacity, notifications/expiry_tray_N
 //  Reads:   trays            all trays (price, expiry, stock) in one request, every minute while idle
@@ -16,6 +16,7 @@
 // ─────────────────────────────────────────
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <time.h>
 
 #define WIFI_SSID      "Bhem"
@@ -150,11 +151,13 @@ int firebase_send(const char *method, String path, String query, String payload,
                   String &response, int timeoutMs) {
   response = "";
   if (WiFi.status() != WL_CONNECTED) return -1;
+  static WiFiClientSecure client;   // setInsecure: ESP32 board package 3.x needs it for HTTPS
+  client.setInsecure();
   HTTPClient http;
   http.setConnectTimeout(timeoutMs);
   http.setTimeout(timeoutMs);
   // Every path is inside this machine's folder: /devices/<DEVICE_ID><path>
-  http.begin("https://" + String(FIREBASE_HOST) + "/devices/" + DEVICE_ID + path +
+  http.begin(client, "https://" + String(FIREBASE_HOST) + "/devices/" + DEVICE_ID + path +
              ".json?auth=" + String(FIREBASE_AUTH) + query);
   if (payload.length() > 0) http.addHeader("Content-Type", "application/json");
   int code = http.sendRequest(method, payload);
@@ -238,6 +241,14 @@ void firebase_heartbeat() {
   firebase_put("/info/last_seen", "{\".sv\":\"timestamp\"}");
 }
 
+// Key of order N: "999998_order_2" = (1,000,000 - N) first, so Firebase (which lists keys
+// A→Z) shows the NEWEST order at the top. The app reads the number after "order_".
+String orderKey(int n) {
+  char k[24];
+  snprintf(k, sizeof(k), "%06d_order_%d", 1000000 - n, n);
+  return String(k);
+}
+
 // Continue numbering after the highest order_N already in Firebase,
 // so an old order is never overwritten (even if /orders/summary is missing)
 void firebase_loadOrderCount() {
@@ -247,8 +258,10 @@ void firebase_loadOrderCount() {
     return;
   }
   int highest = 0, pos = 0;
-  while ((pos = body.indexOf("\"order_", pos)) >= 0) {
-    pos += 7;
+  while ((pos = body.indexOf("order_", pos)) >= 0) {   // "order_N" and "999998_order_N"
+    char before = pos > 0 ? body.charAt(pos - 1) : ' ';
+    pos += 6;
+    if (before != '"' && before != '_') continue;
     int n = body.substring(pos, pos + 8).toInt();
     if (n > highest) highest = n;
   }
@@ -378,7 +391,7 @@ void firebase_logOrder(int tray, int amountPaid, int change) {
   if (takeOne) trayStock[tray]--;        // local copy; sensor trays get the real value from ESP32 #2
 
   // 1. The order itself
-  firebase_put("/orders/order_" + String(orderCount),
+  firebase_put("/orders/" + orderKey(orderCount),
     "{\"tray\":" + String(tray + 1) +
     ",\"amount_paid\":" + String(amountPaid) +
     ",\"change\":" + String(change) +

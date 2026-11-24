@@ -4,8 +4,10 @@ package com.example.sanivend;
  * Text and bookkeeping for the "new order" notification.
  * Plain Java (no Android code), so it is covered by OrderAlertRulesTest.
  *
- * Each sale is saved by ESP32 #1 as /devices/{id}/orders/order_N with N counting up
- * (order_1, order_2 …). The app remembers the highest N it has already told the owner about
+ * Each sale is saved by ESP32 #1 under /devices/{id}/orders with N counting up.
+ * Key since firmware 2.4: "999998_order_2" (1,000,000 − N, six digits, then order_N), so the
+ * Firebase console lists the newest order first. Older orders keep the plain "order_N" key;
+ * both forms are read. The app remembers the highest N it has already told the owner about
  * and notifies only for higher numbers, so old orders never pop up again.
  */
 public final class OrderAlertRules {
@@ -18,11 +20,14 @@ public final class OrderAlertRules {
 
     private OrderAlertRules() {}
 
-    /** "order_12" → 12; anything else (e.g. "summary") → -1. */
+    /** "order_12" or "999988_order_12" → 12; anything else (e.g. "summary") → -1. */
     public static int number(String key) {
-        if (key == null || !key.startsWith("order_")) return -1;
+        if (key == null) return -1;
+        int at = key.indexOf("order_");
+        if (at < 0) return -1;
+        if (at > 0 && !key.substring(0, at).matches("\\d+_")) return -1;
         try {
-            int n = Integer.parseInt(key.substring(6));
+            int n = Integer.parseInt(key.substring(at + 6));
             return n > 0 ? n : -1;
         } catch (NumberFormatException e) {
             return -1;

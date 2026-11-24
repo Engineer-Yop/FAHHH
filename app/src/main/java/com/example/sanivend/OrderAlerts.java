@@ -94,9 +94,10 @@ public final class OrderAlerts {
             return;
         }
         List<Integer> fresh = new ArrayList<>();
+        java.util.Map<Integer, DataSnapshot> byNumber = new java.util.HashMap<>();
         for (DataSnapshot o : orders.getChildren()) {
             int n = OrderAlertRules.number(o.getKey());
-            if (n > last) fresh.add(n);
+            if (n > last) { fresh.add(n); byNumber.put(n, o); }
         }
         if (fresh.isEmpty()) return;
         Collections.sort(fresh);
@@ -105,7 +106,7 @@ public final class OrderAlerts {
         boolean allowed = true;
         for (int i = from; i < fresh.size() && allowed; i++) {
             int n = fresh.get(i);
-            allowed = send(context, deviceId, deviceName, n, orders.child("order_" + n));
+            allowed = send(context, deviceId, deviceName, n, byNumber.get(n));
         }
         if (!allowed) return;                     // no permission yet: try again next time
         if (from > 0) sendMore(context, deviceId, deviceName, from);

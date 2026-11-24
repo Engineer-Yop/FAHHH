@@ -9,6 +9,7 @@
 #if USE_FIREBASE
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <time.h>
 
 #define WIFI_SSID      "Bhem"
@@ -21,9 +22,14 @@
 #define WIFI_RETRY_MS  30000
 
 int logCount = 0;
+
+// HTTPS client. setInsecure(): newer ESP32 board packages (3.x) refuse HTTPS
+// unless a certificate is given or this is set, which showed up as "HTTP -1".
+WiFiClientSecure fb2Client;
 unsigned long lastWifiTry2 = 0;
 
 void firebase_init() {
+  fb2Client.setInsecure();
   Serial.print("[WiFi] Connecting to " + String(WIFI_SSID));
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -61,14 +67,14 @@ String fb2_url(String path) {
 
 String fb2_get(String path) {
   if (WiFi.status() != WL_CONNECTED) return "null";
-  HTTPClient http; http.setTimeout(5000); http.begin(fb2_url(path));
+  HTTPClient http; http.setTimeout(5000); http.begin(fb2Client, fb2_url(path));
   String r = (http.GET() == 200) ? http.getString() : "null";
   http.end(); r.trim(); return r;
 }
 
 int fb2_put(String path, String payload) {
   if (WiFi.status() != WL_CONNECTED) return -1;
-  HTTPClient http; http.setTimeout(5000); http.begin(fb2_url(path));
+  HTTPClient http; http.setTimeout(5000); http.begin(fb2Client, fb2_url(path));
   http.addHeader("Content-Type", "application/json");
   int code = http.PUT(payload); http.end();
   if (code != 200) Serial.println("[Firebase] PUT " + path + " failed, HTTP " + String(code));
@@ -78,10 +84,11 @@ int fb2_put(String path, String payload) {
 // PATCH changes only the fields given (used for tray stock)
 int fb2_patch(String path, String payload) {
   if (WiFi.status() != WL_CONNECTED || deviceId.length() == 0) return -1;
-  HTTPClient http; http.setTimeout(5000); http.begin(fb2_url(path));
+  HTTPClient http; http.setTimeout(5000); http.begin(fb2Client, fb2_url(path));
   http.addHeader("Content-Type", "application/json");
   int code = http.PATCH(payload); http.end();
-  if (code != 200) Serial.println("[Firebase] PATCH " + path + " failed, HTTP " + String(code));
+  if (code != 200) Serial.println("[Firebase] PATCH " + path + " failed, HTTP " + String(code) +
+                                 (code < 0 ? " (" + HTTPClient::errorToString(code) + ")" : ""));
   return code;
 }
 
