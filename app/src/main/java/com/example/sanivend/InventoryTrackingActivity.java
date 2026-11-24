@@ -43,6 +43,10 @@ public class InventoryTrackingActivity extends BaseActivity {
             return insets;
         });
 
+        CategoryNames.follow(this, names -> CategoryNames.setTexts(names,
+                findViewById(R.id.tv_inv_cat_1), findViewById(R.id.tv_inv_cat_2),
+                findViewById(R.id.tv_inv_cat_3), findViewById(R.id.tv_inv_cat_4)));
+
         setupTrayMappings();
         setupRefill();
         observeInventory();

@@ -63,6 +63,10 @@ public class GraphActivity extends BaseActivity {
 
         setupViewModel();
         setupFilters();
+        CategoryNames.follow(this, names -> {
+            CategoryNames.setTexts(names, catNapkins, catWipes, catTissues, catSanitizers);
+            if (viewModel != null && currentCategory != null) setCategory(currentCategory);   // refresh the total's label
+        });
 
         setMode(SalesBuckets.WEEK);
         setCategory(null);
@@ -100,8 +104,11 @@ public class GraphActivity extends BaseActivity {
         }
     }
 
+    private String currentCategory;
+
     private void setCategory(String category) {
-        viewModel.setCategory(category);
+        currentCategory = category;
+        viewModel.setCategory(category, category == null ? null : CategoryNames.display(this, category));
         catAll.setSelected(category == null);
         catNapkins.setSelected(ProductCatalog.NAPKINS.equals(category));
         catWipes.setSelected(ProductCatalog.WIPES.equals(category));

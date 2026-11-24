@@ -73,6 +73,7 @@
 
             <!-- Category: Sanitary Napkins -->
             <TextView
+                android:id="@+id/tv_inv_cat_1"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
                 android:layout_marginTop="24dp"
@@ -150,6 +151,7 @@
 
             <!-- Category: Wet Wipes -->
             <TextView
+                android:id="@+id/tv_inv_cat_2"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
                 android:layout_marginTop="24dp"
@@ -189,6 +191,7 @@
 
             <!-- Category: Facial Tissues -->
             <TextView
+                android:id="@+id/tv_inv_cat_3"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
                 android:layout_marginTop="24dp"
@@ -228,6 +231,7 @@
 
             <!-- Category: Sanitizers -->
             <TextView
+                android:id="@+id/tv_inv_cat_4"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
                 android:layout_marginTop="24dp"

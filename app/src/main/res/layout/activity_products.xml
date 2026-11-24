@@ -38,19 +38,39 @@
             android:paddingBottom="24dp">
 
             <!-- Category: Sanitary Napkins -->
-            <TextView
-                android:id="@+id/label_sanitary_napkins"
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:layout_marginHorizontal="24dp"
-                android:background="@drawable/product_label_bg"
-                android:gravity="center"
-                android:text="Sanitary Napkins"
-                android:textColor="@color/black"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:clickable="true"
-                android:focusable="true" />
+                android:layout_marginHorizontal="24dp">
+
+                <TextView
+                    android:id="@+id/label_sanitary_napkins"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/product_label_bg"
+                    android:paddingHorizontal="52dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:gravity="center"
+                    android:text="Sanitary Napkins"
+                    android:textColor="@color/black"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <!-- Rename this category -->
+                <ImageButton
+                    android:id="@+id/btn_rename_cat_1"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginEnd="6dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Rename category"
+                    android:src="@android:drawable/ic_menu_edit"
+                    app:tint="@color/black" />
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -88,19 +108,39 @@
             </LinearLayout>
 
             <!-- Category: Wet Wipes -->
-            <TextView
-                android:id="@+id/label_wet_wipes"
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:layout_marginHorizontal="24dp"
-                android:background="@drawable/product_label_bg"
-                android:gravity="center"
-                android:text="Wet Wipes"
-                android:textColor="@color/black"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:clickable="true"
-                android:focusable="true" />
+                android:layout_marginHorizontal="24dp">
+
+                <TextView
+                    android:id="@+id/label_wet_wipes"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/product_label_bg"
+                    android:paddingHorizontal="52dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:gravity="center"
+                    android:text="Wet Wipes"
+                    android:textColor="@color/black"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <!-- Rename this category -->
+                <ImageButton
+                    android:id="@+id/btn_rename_cat_2"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginEnd="6dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Rename category"
+                    android:src="@android:drawable/ic_menu_edit"
+                    app:tint="@color/black" />
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -138,19 +178,39 @@
             </LinearLayout>
 
             <!-- Category: Facial Tissues -->
-            <TextView
-                android:id="@+id/label_facial_tissues"
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:layout_marginHorizontal="24dp"
-                android:background="@drawable/product_label_bg"
-                android:gravity="center"
-                android:text="Facial Tissues"
-                android:textColor="@color/black"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:clickable="true"
-                android:focusable="true" />
+                android:layout_marginHorizontal="24dp">
+
+                <TextView
+                    android:id="@+id/label_facial_tissues"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/product_label_bg"
+                    android:paddingHorizontal="52dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:gravity="center"
+                    android:text="Facial Tissues"
+                    android:textColor="@color/black"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <!-- Rename this category -->
+                <ImageButton
+                    android:id="@+id/btn_rename_cat_3"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginEnd="6dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Rename category"
+                    android:src="@android:drawable/ic_menu_edit"
+                    app:tint="@color/black" />
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -188,19 +248,39 @@
             </LinearLayout>
 
             <!-- Category: Sanitizers -->
-            <TextView
-                android:id="@+id/label_hand_sanitizers"
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:layout_marginHorizontal="24dp"
-                android:background="@drawable/product_label_bg"
-                android:gravity="center"
-                android:text="Sanitizers"
-                android:textColor="@color/black"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:clickable="true"
-                android:focusable="true" />
+                android:layout_marginHorizontal="24dp">
+
+                <TextView
+                    android:id="@+id/label_hand_sanitizers"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/product_label_bg"
+                    android:paddingHorizontal="52dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:gravity="center"
+                    android:text="Sanitizers"
+                    android:textColor="@color/black"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <!-- Rename this category -->
+                <ImageButton
+                    android:id="@+id/btn_rename_cat_4"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginEnd="6dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Rename category"
+                    android:src="@android:drawable/ic_menu_edit"
+                    app:tint="@color/black" />
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"

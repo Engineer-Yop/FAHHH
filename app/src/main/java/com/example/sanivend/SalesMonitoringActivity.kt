@@ -76,6 +76,11 @@ class SalesMonitoringActivity : BaseActivity() {
     }
 
     private fun setupButtons() {
+        CategoryNames.follow(this) { names ->
+            CategoryNames.setTexts(names,
+                findViewById(R.id.btn_sales_napkins), findViewById(R.id.btn_sales_wipes),
+                findViewById(R.id.btn_sales_tissues), findViewById(R.id.btn_sales_sanitizers))
+        }
         findViewById<Button>(R.id.btn_sales_napkins).setOnClickListener { toggle(containers[0]) }
         findViewById<Button>(R.id.btn_sales_wipes).setOnClickListener { toggle(containers[1]) }
         findViewById<Button>(R.id.btn_sales_tissues).setOnClickListener { toggle(containers[2]) }

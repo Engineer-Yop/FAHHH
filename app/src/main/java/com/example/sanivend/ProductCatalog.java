@@ -80,6 +80,24 @@ public final class ProductCatalog {
         return null;
     }
 
+    /** The 4 categories in screen order; these fixed values are the IDs, the owner can rename them. */
+    public static final String[] CATEGORIES = {NAPKINS, WIPES, TISSUES, SANITIZERS};
+
+    /** 1–4 for a category ID ("Wet Wipes" → 2), 0 if unknown. */
+    public static int categoryIndex(String category) {
+        for (int i = 0; i < CATEGORIES.length; i++) if (CATEGORIES[i].equals(category)) return i + 1;
+        return 0;
+    }
+
+    /** Why a category name can't be used, or null when it's fine. */
+    public static String categoryNameProblem(String name) {
+        String n = name == null ? "" : name.trim();
+        if (n.length() < 2) return "Enter the category name.";
+        if (n.length() > 24) return "Keep the name under 24 characters.";
+        if (n.contains("\"") || n.contains("\\") || n.contains("\n")) return "Leave out quotes (\") and backslashes (\\).";
+        return null;
+    }
+
     /** First word of a name: "Kleenfant Wet Wipes" → "Kleenfant". */
     static String brand(String name) {
         int sp = name.indexOf(' ');

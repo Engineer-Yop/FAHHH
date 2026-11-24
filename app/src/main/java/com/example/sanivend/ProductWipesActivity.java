@@ -27,6 +27,9 @@ public class ProductWipesActivity extends BaseActivity {
             return insets;
         });
 
+        CategoryNames.follow(this, names ->
+                ((android.widget.TextView) findViewById(R.id.tv_category_title)).setText(names[1]));
+
         trayEditor = new TrayEditor(this);
 
         // Tray 3

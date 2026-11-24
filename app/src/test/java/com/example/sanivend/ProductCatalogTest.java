@@ -56,4 +56,16 @@ public class ProductCatalogTest {
         assertNotNull(ProductCatalog.nameProblem("Say \"hi\""));     // would break the machine's JSON
         assertNotNull(ProductCatalog.nameProblem("12345678901234567890123456789012345678901"));
     }
+
+    @Test
+    public void categoryNames() {
+        assertEquals(4, ProductCatalog.CATEGORIES.length);
+        assertEquals(2, ProductCatalog.categoryIndex(ProductCatalog.WIPES));
+        assertEquals(0, ProductCatalog.categoryIndex("Snacks"));
+        assertNull(ProductCatalog.categoryNameProblem("Feminine Care"));
+        assertNotNull(ProductCatalog.categoryNameProblem(" "));
+        assertNotNull(ProductCatalog.categoryNameProblem("A"));
+        assertNotNull(ProductCatalog.categoryNameProblem("This name is far too long to fit"));
+        assertNotNull(ProductCatalog.categoryNameProblem("Say \"hi\""));
+    }
 }

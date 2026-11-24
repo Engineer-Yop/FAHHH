@@ -24,6 +24,7 @@ class AnalyticsViewModel : ViewModel() {
     private var deviceId: String? = null
     private var mode: String = SalesBuckets.WEEK
     private var category: String? = null
+    private var categoryLabel: String? = null
 
     private var ordersListener: ValueEventListener? = null
     private var ordersRef: DatabaseReference? = null
@@ -38,8 +39,10 @@ class AnalyticsViewModel : ViewModel() {
         refreshObservation()
     }
 
-    fun setCategory(newCategory: String?) {
+    /** @param label the name to show for it (the owner can rename categories) */
+    fun setCategory(newCategory: String?, label: String?) {
         category = newCategory
+        categoryLabel = label
         refreshObservation()
     }
 
@@ -47,6 +50,7 @@ class AnalyticsViewModel : ViewModel() {
         val id = deviceId ?: return
         val mode = this.mode
         val category = this.category
+        val categoryLabel = this.categoryLabel
 
         ordersListener?.let { ordersRef?.removeEventListener(it) }
         ordersRef = FirebaseDatabase.getInstance().reference.child("devices").child(id).child("orders")
@@ -75,7 +79,7 @@ class AnalyticsViewModel : ViewModel() {
                     }
                 }
                 _chartData.postValue(data)
-                val what = category ?: "All products"
+                val what = categoryLabel ?: category ?: "All products"
                 _totals.postValue("${SalesBuckets.periodName(mode, today)} · $what: " +
                         "$items item${if (items == 1) "" else "s"} · ₱$revenue")
             }

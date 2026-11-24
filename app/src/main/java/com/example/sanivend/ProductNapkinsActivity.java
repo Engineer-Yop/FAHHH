@@ -27,6 +27,9 @@ public class ProductNapkinsActivity extends BaseActivity {
             return insets;
         });
 
+        CategoryNames.follow(this, names ->
+                ((android.widget.TextView) findViewById(R.id.tv_category_title)).setText(names[0]));
+
         trayEditor = new TrayEditor(this);
 
         // Tray 1
