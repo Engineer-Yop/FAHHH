@@ -7,12 +7,12 @@
 //    vending_esp2.ino  (this file — settings, command loop)
 //    firebase.ino      WiFi + vend log
 //    servo.ino         PCA9685 servo control
-//    stock.ino         tray stock from the ToF sensors -> Firebase
-//    tof.ino           TCA9548A MUX + 8x VL53L0X (calibrated with the tof_test sketch)
+//    stock.ino         real stock: vend count checked by the ToF sensors -> Firebase
+//    tof.ino           TCA9548A MUX + 8x VL53L0X, distance -> possible stock, bus self-repair
 //    uart.ino          UART2 link to ESP32 #1
 //
 //  Libraries: Adafruit PWM Servo Driver (+ Adafruit BusIO)
-//             VL53L0X by Pololu (only when USE_TOF is 1), Preferences (built in)
+//             VL53L0X by Pololu (only when USE_TOF is 1)
 // ─────────────────────────────────────────
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
@@ -24,6 +24,7 @@
 // ── I2C addresses ────────────────────────
 #define PCA9685_ADDR   0x40
 #define MUX_ADDR       0x70  // TCA9548A, A0–A2 to GND
+#define I2C_CLOCK_HZ   50000 // 50 kHz: steadier on long sensor wires than 100 kHz
 
 Adafruit_PWMServoDriver pca9685 = Adafruit_PWMServoDriver(PCA9685_ADDR);
 
@@ -40,21 +41,25 @@ Adafruit_PWMServoDriver pca9685 = Adafruit_PWMServoDriver(PCA9685_ADDR);
 // ── Trays + ToF stock ─────────────────────
 #define TRAY_CAPACITY      7      // items in a full tray (same as ESP32 #1)
 #define TOF_SAMPLES        5      // readings per background measurement (median used)
-#define TOF_STABLE_COUNT   3      // same count this many times in a row before it is accepted
+#define TOF_STABLE_COUNT   3      // same sensor result this many times in a row before it is used
+#define TOF_FAIL_READS     5      // bad readings in a row -> tray handed back to ESP32 #1's count
 #define TOF_SCAN_MS        300    // one tray measured every 300 ms -> all 8 about every 2.4 s
 #define TOF_AFTER_VEND_MS  600    // wait for the item to fall before measuring again
 #define TOF_OUT_OF_RANGE   8000   // library gives ~8190 when nothing is in range
-#define TOF_MIN_SPAN_MM    20     // EMPTY and FULL must differ by at least this much
-#define STOCK_REPUBLISH_MS 300000 // re-send sensor stock every 5 min (overrides manual edits)
+#define TOF_REPAIR_EVERY_MS 10000 // at most one I2C bus repair every 10 s
+#define STOCK_SYNC_MS      30000  // read stock from Firebase every 30 s (picks up app refills)
+#define STOCK_REPUBLISH_MS 300000 // re-send every tray's stock every 5 min
+
+// Tray geometry, measured on the machine (2026-11-25), same for all 8 trays:
+#define TOF_FULL_MIN_MM    100    // 7 items: first item 100–140 mm from the sensor
+#define TOF_FULL_MAX_MM    140
+#define TOF_STEP_MIN_MM    90     // each item taken moves it 90–120 mm further
+#define TOF_STEP_MAX_MM    120
+#define TOF_WALL_MM        575    // empty tray: back wall at ~580–600 mm
+#define TOF_TOLERANCE_MM   15     // sensor noise allowed on every limit
+#define TOF_MAX_VALID_MM   1000   // anything further (8000, 8190) = sensor/bus error
 #define TOF_RAW_PUBLISH_MS 5000   // send all 8 raw distances to Firebase every 5 s
                                   //   -> /devices/<ID>/tof_readings {tray_1..tray_8 (mm), updated}
-
-// Calibration backup (mm). The tof_test sketch saves the real values in flash and
-// those are used first; paste its "c" output here only if the flash gets erased.
-// 0 = not calibrated -> that tray is counted by ESP32 #1 instead (its raw mm is still sent
-// to Firebase, so the calibration can be worked out from those readings).
-const int TOF_EMPTY_MM[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-const int TOF_FULL_MM[8]  = {0, 0, 0, 0, 0, 0, 0, 0};
 
 // ── Machine ID (sent by ESP32 #1 as "ID:SV-XXXXXX") ──
 String deviceId = "";            // Firebase logs go under /devices/<deviceId>/vend_logs
@@ -69,7 +74,7 @@ void setup() {
   Serial.println("ESP32 #2 booting...");
 
   Wire.begin(21, 22);
-  Wire.setClock(100000);
+  Wire.setClock(I2C_CLOCK_HZ);
 
   // I2C general-call software reset (PCA9685 etc.)
   Wire.beginTransmission(0x00);
@@ -119,5 +124,5 @@ void loop() {
 // ── Vend one tray ─────────────────────────
 bool vendTray(int tray) {
   servo_vend(tray);
-  return true;   // a finished spin counts as success; the sensor then updates the stock
+  return true;   // a finished spin counts as success; the sensor confirms or corrects the stock
 }
